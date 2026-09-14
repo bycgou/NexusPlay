@@ -1,0 +1,96 @@
+server:
+  address: 0.0.0.0
+  port: 8081
+app:
+  external-url: http://localhost:8081
+spring:
+  application:
+    name: BiliPlus
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/biliplus?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
+  # 邮件相关设置
+  mail:
+    host: smtp.qq.com
+    port: 465
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          socketFactory:
+            class: javax.net.ssl.SSLSocketFactory
+            port: 465
+          starttls:
+            enable: true
+            required: true
+        debug: false
+  # 文件上传相关设置（优化大小限制）
+  servlet:
+    multipart:
+      max-file-size: 1024MB  # 单个文件最大1GB（视频文件较大，原10MB不够）
+      max-request-size: 4096MB  # 单次请求最大4GB
+  # redis相关设置
+  data:
+    redis:
+      database: 0
+      host: localhost
+      port: 6379
+      jedis:
+        pool:
+          max-active: 20
+          max-idle: 8
+          max-wait-millis: -1
+          min-idle: 0
+      timeout: 20000
+  # 静态资源配置（核心：解决路径冲突）
+#  web:
+#    resources:
+#      # 静态资源存储目录：整合视频、图片的本地存储路径
+#      static-locations:
+#        - file:${video.upload.base-path}  # 视频存储目录（D:/MyOSS/biliPlus/video-website/Videos/）
+#        - file:${image.upload.local-path} # 图片存储目录（D:/MyOSS/biliPlus/video-website/Images/）
+#      # 静态资源访问映射（关键：区分接口和静态资源）
+#      mapping:
+#        /video-files/**: file:${video.upload.base-path}  # 视频访问路径：/video-files/xxx.mp4
+#        /images/**: file:${image.upload.local-path}      # 图片访问路径：/images/xxx.jpg
+  # 跨域配置（允许前端5173端口访问所有路径）
+  cors:
+    allowed-origins: http://localhost:5173  # 你的Vite前端地址
+    allowed-methods: "*"  # 允许所有请求方法（GET/POST等）
+    allowed-headers: "*"  # 允许所有请求头
+    allow-credentials: true  # 允许携带Cookie（可选，视频播放一般不需要）
+    max-age: 3600  # 预检请求缓存1小时
+
+mybatis:
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com/biliplus/pojo/entity
+  configuration:
+    map-underscore-to-camel-case: true  # 下划线转驼峰（正确）
+
+biliplus:
+  jwt:
+    admin-secret-key: ${JWT_ADMIN_SECRET:biliPlusAdminSecretKey2024}
+    admin-ttl: 86400000
+    admin-token-name: token
+  peoplejwt:
+    people-secret-key: ${JWT_PEOPLE_SECRET:biliPlusPeopleSecretKey2024}
+    people-ttl: 86400000
+    people-token-name: peopleToken
+
+# 视频上传配置（保持原有路径，新增访问前缀说明）
+video:
+  upload:
+    base-path: D:/MyOSS/biliPlus/video-website/Videos/  # 视频实际存储路径
+    temp-path: D:/MyOSS/biliPlus/video-website/temp/    # 分片临时存储路径
+    access-prefix: /video-files/  # 视频访问前缀（与静态资源mapping一致）
+
+# 图片上传配置（保持原有）
+image:
+  upload:
+    base-path: D:/MyOSS/biliPlus/video-website/Images/
+    access-prefix: /images/

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.biliplus.mapper.ChatMessageMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO chat_message (conversation_id, sender_id, content, msg_type, create_time, update_time)
+        VALUES (#{conversationId}, #{senderId}, #{content}, #{msgType}, NOW(), NOW())
+    </insert>
+
+    <select id="selectById" resultType="com.biliplus.pojo.entity.ChatMessage">
+        SELECT * FROM chat_message WHERE id = #{id}
+    </select>
+
+    <select id="selectMessageByConversationId" resultType="com.biliplus.pojo.entity.ChatMessage">
+        select * from chat_message
+        where conversation_id = #{conversationId}
+        order by create_time DESC
+        limit #{offset}, #{pageSize}
+    </select>
+
+</mapper>

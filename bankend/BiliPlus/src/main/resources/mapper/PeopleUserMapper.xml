@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.biliplus.mapper.PeopleUserMapper">
+
+    <insert id="insert">
+        INSERT INTO User (username, password, email, phone, avatar, nickname, signature, role, status, create_time, update_time)
+        VALUES (#{username}, #{password}, #{email}, #{phone}, #{avatar}, #{nickname}, #{signature}, #{role}, #{status}, #{createTime}, #{updateTime})
+    </insert>
+    <insert id="insertVideo">
+        INSERT INTO Video (category_id,title, description, cover_url, video_url,duration,user_id,create_time, update_time)
+        VALUES (#{categoryId},#{title}, #{description}, #{coverUrl},#{videoUrl},#{duration},#{userId},#{createTime}, #{updateTime})
+    </insert>
+
+    <update id="update">
+        UPDATE User
+        <set>
+            <if test="password != null">
+                password = #{password},
+            </if>
+            <if test="email != null">
+                email = #{email},
+            </if>
+            <if test="phone != null">
+                phone = #{phone},
+            </if>
+            <if test="avatar != null">
+                avatar = #{avatar},
+            </if>
+            <if test="nickname != null">
+                nickname = #{nickname},
+            </if>
+            <if test="signature != null">
+                signature = #{signature},
+            </if>
+
+        </set>
+        where id = #{id}
+    </update>
+
+
+    <select id="countByEmail" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM User WHERE email = #{email}
+    </select>
+<!--    根据ID批量查询用户-->
+    <select id="selectByIds" resultType="com.biliplus.pojo.entity.User">
+        select id,nickname,user.avatar
+        from user
+        where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+    <select id="getUserinfoById" resultType="com.biliplus.pojo.entity.User">
+        select nickname,avatar
+        from user
+        where id = #{id}
+    </select>
+
+
+</mapper>

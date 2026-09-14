@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.biliplus.mapper.VideoMapper">
+
+    <select id="pageQuery" resultType="com.biliplus.pojo.entity.Video">
+        select v.*, u.nickname, u.avatar
+        from video v
+        left join user u on v.user_id = u.id
+        <where>
+            v.status = 1
+            <if test="title != null and title != ''">
+                and v.title like concat('%',#{title},'%')
+            </if>
+            <if test="categoryId != null">
+                and v.category_id = #{categoryId}
+            </if>
+            <if test="userId != null">
+                and v.user_id = #{userId}
+            </if>
+        </where>
+        order by v.create_time desc
+    </select>
+
+</mapper>

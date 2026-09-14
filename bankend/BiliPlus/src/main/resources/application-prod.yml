@@ -1,0 +1,77 @@
+server:
+  address: 0.0.0.0
+  port: 8080
+
+app:
+  external-url: ${EXTERNAL_URL:http://localhost:8081}
+
+spring:
+  application:
+    name: BiliPlus
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/biliplus?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  mail:
+    host: smtp.qq.com
+    port: 465
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          socketFactory:
+            class: javax.net.ssl.SSLSocketFactory
+            port: 465
+          starttls:
+            enable: true
+            required: true
+        debug: false
+
+  servlet:
+    multipart:
+      max-file-size: 200MB   # 👈 根据 2GB 内存和 40GB 硬盘合理限制（原 1GB 太大！）
+      max-request-size: 200MB
+
+  data:
+    redis:
+      database: 0
+      host: localhost
+      port: 6379
+      timeout: 20000
+      jedis:
+        pool:
+          max-active: 10    # 👈 降低连接数，节省内存
+          max-idle: 5
+          min-idle: 1
+          max-wait-millis: 2000
+
+  # ⚠️ 注意：Spring Boot 2.6+ 不再推荐用 web.resources 配置静态资源路径
+  # 视频和图片将通过 Nginx 直接提供，Java 只负责上传，不负责访问！
+
+# JWT 配置 - 必须通过环境变量注入，禁止使用默认值
+biliplus:
+  jwt:
+    admin-secret-key: ${JWT_ADMIN_SECRET}
+    admin-ttl: 86400000
+    admin-token-name: token
+  peoplejwt:
+    people-secret-key: ${JWT_PEOPLE_SECRET}
+    people-ttl: 86400000
+    people-token-name: peopleToken
+
+# 📁 路径改为 Linux 路径！
+video:
+  upload:
+    base-path: /www/wwwroot/videos/      # 👈 视频存储目录（与宝塔一致）
+    temp-path: /www/wwwroot/videos/temp/ # 分片临时目录
+    access-prefix: /videos/              # 前端访问前缀（对应 Nginx /videos/）
+
+image:
+  upload:
+    base-path: /www/wwwroot/images/      # 👈 图片存储目录
+    access-prefix: /images/

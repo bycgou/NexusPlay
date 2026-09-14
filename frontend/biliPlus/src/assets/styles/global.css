@@ -1,0 +1,227 @@
+/* ============================================
+   NexusPlay 全局设计系统
+   ============================================ */
+
+:root {
+  /* 品牌色 */
+  --brand: #6C5CE7;
+  --brand-dark: #5A4BD1;
+  --brand-light: #A29BFE;
+  --brand-bg: rgba(108, 92, 231, 0.08);
+
+  /* 中性色 */
+  --ink: #1e293b;
+  --ink-secondary: #475569;
+  --mist: #64748b;
+  --mist-light: #94a3b8;
+  --paper: #f8fafc;
+  --paper-white: #ffffff;
+  --line: #e2e8f0;
+  --line-light: #f1f5f9;
+
+  /* 功能色 */
+  --like: #FF6B6B;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+
+  /* 圆角 */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
+  --shadow-hover: 0 12px 40px rgba(108, 92, 231, 0.15);
+
+  /* 间距 */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* 字体 */
+  --font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, system-ui, sans-serif;
+  --font-mono: 'SF Mono', 'Cascadia Code', Consolas, monospace;
+
+  /* 过渡 */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.25s ease;
+  --transition-slow: 0.35s ease;
+
+  /* Element Plus 主题覆盖 */
+  --el-color-primary: var(--brand);
+  --el-color-primary-light-3: var(--brand-light);
+  --el-color-primary-dark-2: var(--brand-dark);
+  --el-border-radius-base: var(--radius-sm);
+  --el-font-family: var(--font-family);
+}
+
+/* 暗色模式 */
+[data-theme="dark"] {
+  --brand: #7c6ef0;
+  --brand-dark: #6a5ce0;
+  --brand-light: #8b7cf7;
+  --brand-bg: rgba(124, 110, 240, 0.12);
+
+  --ink: #e2e8f0;
+  --ink-secondary: #cbd5e1;
+  --mist: #94a3b8;
+  --mist-light: #64748b;
+  --paper: #0f172a;
+  --paper-white: #1e293b;
+  --line: #334155;
+  --line-light: #1e293b;
+
+  --like: #ff7979;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.4);
+  --shadow-hover: 0 12px 40px rgba(124, 110, 240, 0.2);
+
+  color-scheme: dark;
+}
+
+/* 暗色模式下的 Element Plus 覆盖 */
+[data-theme="dark"] .el-button--default {
+  --el-button-bg-color: var(--paper-white);
+  --el-button-border-color: var(--line);
+  --el-button-text-color: var(--ink);
+}
+
+[data-theme="dark"] .el-input__wrapper,
+[data-theme="dark"] .el-textarea__inner {
+  background-color: var(--paper-white);
+  box-shadow: 0 0 0 1px var(--line) inset;
+}
+
+[data-theme="dark"] .el-card {
+  --el-card-bg-color: var(--paper-white);
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .el-dialog {
+  --el-dialog-bg-color: var(--paper-white);
+}
+
+[data-theme="dark"] .el-dropdown-menu {
+  background-color: var(--paper-white);
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .el-dropdown-menu__item {
+  color: var(--ink);
+}
+
+[data-theme="dark"] .el-dropdown-menu__item:hover {
+  background-color: var(--brand-bg);
+  color: var(--brand);
+}
+
+[data-theme="dark"] .el-empty__description p {
+  color: var(--mist);
+}
+
+[data-theme="dark"] .el-skeleton__item {
+  background: linear-gradient(90deg, var(--line) 25%, var(--line-light) 37%, var(--line) 63%);
+}
+
+/* 主题过渡动画 */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease !important;
+}
+
+/* 全局重置 */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-family);
+  color: var(--ink);
+  background-color: var(--paper);
+  line-height: 1.6;
+}
+
+/* Element Plus 主题变量覆盖 */
+.el-button--primary {
+  --el-button-bg-color: var(--brand);
+  --el-button-border-color: var(--brand);
+  --el-button-hover-bg-color: var(--brand-dark);
+  --el-button-hover-border-color: var(--brand-dark);
+}
+
+.el-button--primary.is-plain {
+  --el-button-bg-color: var(--brand-bg);
+  --el-button-border-color: var(--brand-light);
+  --el-button-text-color: var(--brand);
+}
+
+/* 通用链接样式 */
+a {
+  color: var(--brand);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--brand-dark);
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--mist-light);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--mist);
+}
+
+/* 焦点可见性 */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* 减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
