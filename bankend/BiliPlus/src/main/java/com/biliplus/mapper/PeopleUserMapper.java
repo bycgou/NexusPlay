@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,4 +47,11 @@ public interface PeopleUserMapper {
 
     @Select("select * from video where user_id = #{userId} order by create_time desc")
     List<Video> selectVideosByUserId(@Param("userId") Long userId);
+
+    /** 0-禁用 1-正常（直播违规封禁/解封） */
+    @Update("UPDATE user SET status = #{status} WHERE id = #{userId}")
+    int updateUserStatus(@Param("userId") Long userId, @Param("status") Integer status);
+
+    @Update("UPDATE user SET password = #{password}, update_time = NOW() WHERE id = #{userId}")
+    int updatePassword(@Param("userId") Long userId, @Param("password") String password);
 }

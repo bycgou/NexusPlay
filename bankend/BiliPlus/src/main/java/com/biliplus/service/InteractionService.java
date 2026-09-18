@@ -1,5 +1,7 @@
 package com.biliplus.service;
 
+import com.biliplus.result.PageResult;
+
 import java.util.Map;
 
 public interface InteractionService {
@@ -28,4 +30,14 @@ public interface InteractionService {
      * 获取用户互动状态（是否关注）
      */
     Map<String, Object> getUserInteractionStatus(Long userId, Long targetUserId);
+
+    /**
+     * 我的点赞视频列表（分页）
+     */
+    PageResult listLikedVideos(Long userId, Integer page, Integer pageSize);
+
+    /**
+     * 我的收藏视频列表（分页）
+     */
+    PageResult listFavoriteVideos(Long userId, Integer page, Integer pageSize);
 }

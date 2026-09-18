@@ -12,6 +12,18 @@ const routers: RouteRecordRaw[] = [
         meta: {title: '首页'}
     },
     {
+        path: '/channel/:type',
+        name: 'Channel',
+        component: () => import('@/views/channel/ChannelPage.vue'),
+        meta: {title: '频道'}
+    },
+    {
+        path: '/anime',
+        name: 'Anime',
+        component: () => import('@/views/anime/AnimeSquare.vue'),
+        meta: {title: '番剧'}
+    },
+    {
         path: '/login',
         name: 'Login',
         component: () => import('@/views/login/UserLogin.vue'),
@@ -48,13 +60,50 @@ const routers: RouteRecordRaw[] = [
             {
                 path: 'profile',
                 name: 'profile',
-                component: () => import('@/views/setting/components/ProfileSettings.vue')
+                component: () => import('@/views/setting/components/ProfileSettings.vue'),
+                meta: { title: '个人资料设置' }
             },
             {
                 path: 'videoSet',
                 name: 'videoSet',
                 component: () => import('@/views/setting/components/VideoSettings.vue'),
                 meta: { title: '稿件设置' }
+            },
+            {
+                path: 'security',
+                name: 'security',
+                component: () => import('@/views/setting/components/SecuritySettings.vue'),
+                meta: { title: '账号安全' }
+            },
+            {
+                path: 'player',
+                name: 'player',
+                component: () => import('@/views/setting/components/PlayerSettings.vue'),
+                meta: { title: '播放设置' }
+            },
+            {
+                path: 'quality',
+                name: 'quality',
+                component: () => import('@/views/setting/components/QualitySettings.vue'),
+                meta: { title: '画质与缓存' }
+            },
+            {
+                path: 'notification',
+                name: 'notification',
+                component: () => import('@/views/setting/components/NotificationSettings.vue'),
+                meta: { title: '通知设置' }
+            },
+            {
+                path: 'privacy',
+                name: 'privacy',
+                component: () => import('@/views/setting/components/PrivacySettings.vue'),
+                meta: { title: '隐私设置' }
+            },
+            {
+                path: 'shortcut',
+                name: 'shortcut',
+                component: () => import('@/views/setting/components/ShortcutSettings.vue'),
+                meta: { title: '快捷键设置' }
             }
         ]
     },
@@ -80,13 +129,48 @@ const routers: RouteRecordRaw[] = [
         path: '/user/:id',
         name: 'UserSpace',
         component: () => import('@/views/user/UserSpace.vue'),
-        meta: {title: '用户空间'}
+        meta: {title: '个人主页'}
+    },
+    {
+        // 当前登录用户个人主页快捷入口
+        path: '/me',
+        name: 'MySpace',
+        redirect: () => {
+            try {
+                const stored = localStorage.getItem('userInfo')
+                const info = stored ? JSON.parse(stored) : null
+                if (info?.id) {
+                    return { name: 'UserSpace', params: { id: info.id } }
+                }
+            } catch {
+                // ignore
+            }
+            return '/login'
+        }
     },
     {
         path: '/chat',
         name: 'ChatView',
         component: () => import('@/views/chat/ChatView.vue'),
         meta: {requiresAuth: true, title: '消息'}
+    },
+    {
+        path: '/live',
+        name: 'LiveSquare',
+        component: () => import('@/views/live/LiveSquare.vue'),
+        meta: {title: '直播广场'}
+    },
+    {
+        path: '/live/room/:id',
+        name: 'LiveRoom',
+        component: () => import('@/views/live/LiveRoom.vue'),
+        meta: {title: '直播间'}
+    },
+    {
+        path: '/live/start',
+        name: 'LiveStart',
+        component: () => import('@/views/live/LiveStart.vue'),
+        meta: {requiresAuth: true, title: '开播'}
     },
     {
         // 404

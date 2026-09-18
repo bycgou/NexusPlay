@@ -174,6 +174,10 @@ const formatDate = (dateStr) => {
 const loadVideoDetail = async () => {
   const currentId = route.params.id
   if (!currentId) return
+  // 切换视频时先重置互动态，避免残留上一视频的关注/点赞状态
+  followed.value = false
+  liked.value = false
+  collected.value = false
   try {
     const videoRes = await getVideoDetail(currentId)
     if (videoRes.code !== 1 || !videoRes.data) throw new Error(videoRes.msg || '获取视频失败')
@@ -203,14 +207,21 @@ const loadVideoDetail = async () => {
           currentVideo.value.author.name = userRes.data.nickname || currentVideo.value.author.name
           currentVideo.value.author.avatar = userRes.data.avatar || currentVideo.value.author.avatar
           currentVideo.value.author.fansCount = userRes.data.fansCount || 0
+          // 兜底：若视频详情缺 userId，用用户接口返回的 id
+          if (!currentVideo.value.author.authorId && userRes.data.id) {
+            currentVideo.value.author.authorId = userRes.data.id
+          }
         }
       }
     } catch (e) {
       console.warn('获取作者信息失败', e)
     }
 
-    // 加载互动状态
-    await loadInteractionStatus(currentId)
+    // 并行加载互动状态（互不影响）
+    await Promise.all([
+      loadVideoInteraction(currentId),
+      loadFollowStatus()
+    ])
     loadRecommendVideos(currentId)
   } catch (err) {
     console.error('加载失败:', err)
@@ -223,8 +234,8 @@ watch(() => route.params.id, (id) => {
   if (id) loadVideoDetail()
 })
 
-// 加载互动状态
-const loadInteractionStatus = async (vid) => {
+// 视频点赞/收藏状态
+const loadVideoInteraction = async (vid) => {
   try {
     const res = await getVideoInteractionStatus(vid)
     if (res.code === 1 && res.data) {
@@ -233,17 +244,30 @@ const loadInteractionStatus = async (vid) => {
       likeCount.value = res.data.likeCount || 0
       collectCount.value = res.data.favoriteCount || 0
     }
-    // 已登录时加载关注状态
-    const authorId = currentVideo.value.author?.authorId
-    if (userStore.userInfo?.id && authorId && Number(userStore.userInfo.id) !== Number(authorId)) {
-      const followRes = await getUserInteractionStatus(authorId)
-      if (followRes.code === 1 && followRes.data) {
-        followed.value = followRes.data.followed || false
-        currentVideo.value.author.fansCount = followRes.data.fansCount || 0
+  } catch (err) {
+    console.error('加载视频互动状态失败:', err)
+  }
+}
+
+// 关注状态（独立加载，避免被视频互动接口失败连带跳过）
+const loadFollowStatus = async () => {
+  const authorId = currentVideo.value.author?.authorId
+  if (!userStore.userInfo?.id || !authorId) return
+  // 自己不显示关注
+  if (Number(userStore.userInfo.id) === Number(authorId)) {
+    followed.value = false
+    return
+  }
+  try {
+    const followRes = await getUserInteractionStatus(Number(authorId))
+    if (followRes.code === 1 && followRes.data) {
+      followed.value = !!followRes.data.followed
+      if (followRes.data.fansCount != null) {
+        currentVideo.value.author.fansCount = followRes.data.fansCount
       }
     }
   } catch (err) {
-    console.error('加载互动状态失败:', err)
+    console.error('加载关注状态失败:', err)
   }
 }
 
@@ -363,15 +387,6 @@ const handleFollow = async () => {
 onMounted(() => {
   loadVideoDetail()
 })
-watch(
-    () => route.params.id,
-    (newId, oldId) => {
-      console.log('ID 从', oldId, '变为', newId);
-      if (newId && newId !== oldId) {
-        loadVideoDetail();
-      }
-    }
-);
 </script>
 
 <style scoped>

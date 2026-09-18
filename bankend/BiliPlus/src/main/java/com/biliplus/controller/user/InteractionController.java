@@ -1,5 +1,6 @@
 package com.biliplus.controller.user;
 
+import com.biliplus.result.PageResult;
 import com.biliplus.result.Result;
 import com.biliplus.service.InteractionService;
 import com.biliplus.utils.UserContext;
@@ -83,5 +84,39 @@ public class InteractionController {
         Long currentUserId = UserContext.getCurrentUserId();
         Map<String, Object> result = interactionService.getUserInteractionStatus(currentUserId, userId);
         return Result.success(result);
+    }
+
+    /**
+     * 我的点赞视频列表
+     */
+    @GetMapping("/my/liked")
+    public Result<PageResult> listMyLikedVideos(
+            @RequestParam(required = false, defaultValue = "1") Integer page,
+            @RequestParam(required = false, defaultValue = "20") Integer pageSize) {
+        Long userId = UserContext.getCurrentUserId();
+        log.info("查询我的点赞列表 userId={}, page={}, pageSize={}", userId, page, pageSize);
+        try {
+            return Result.success(interactionService.listLikedVideos(userId, page, pageSize));
+        } catch (Exception e) {
+            log.error("查询点赞列表失败", e);
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 我的收藏视频列表
+     */
+    @GetMapping("/my/favorite")
+    public Result<PageResult> listMyFavoriteVideos(
+            @RequestParam(required = false, defaultValue = "1") Integer page,
+            @RequestParam(required = false, defaultValue = "20") Integer pageSize) {
+        Long userId = UserContext.getCurrentUserId();
+        log.info("查询我的收藏列表 userId={}, page={}, pageSize={}", userId, page, pageSize);
+        try {
+            return Result.success(interactionService.listFavoriteVideos(userId, page, pageSize));
+        } catch (Exception e) {
+            log.error("查询收藏列表失败", e);
+            return Result.error(e.getMessage());
+        }
     }
 }

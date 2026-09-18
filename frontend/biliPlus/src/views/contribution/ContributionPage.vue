@@ -30,6 +30,8 @@
             :rules="formRules"
             :recommend-tags="recommendTags"
             :is-uploading="isUploading"
+            :categories="categories"
+            :categories-loading="categoriesLoading"
         >
           <template #cover-selector>
             <CoverSelector v-model="form.coverUrl" />
@@ -59,7 +61,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, onMounted } from 'vue';
+import { ref, reactive, watch, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import router from '@/router/index.js';
 import axios from 'axios';
@@ -68,6 +70,7 @@ import axios from 'axios';
 import VideoUploader from './components/VideoUploader.vue';
 import CoverSelector from './components/CoverSelector.vue';
 import ContributionForm from './components/ContributionForm.vue';
+import { getCategories } from '@/api/category';
 
 // 图标
 import { ArrowLeft } from '@element-plus/icons-vue';
@@ -78,22 +81,25 @@ const duration = ref(0);
 const isUploading = ref(false);
 const contributionForm = ref(null);
 
-// 分类名称到ID的映射（与数据库category表对应）
-const categoryMap = {
-  '生活': 1,
-  '游戏': 2,
-  '音乐': 3,
-  '科技': 4,
-  '动画': 5,
-  '娱乐': 6,
-  '美食': 7,
-  '旅行': 8,
-  '教程': 9,
-  '原创': 10,
-  '热门': 11
+// 后台视频分区列表（type=1）
+const categories = ref([]);
+const categoriesLoading = ref(false);
+
+const loadCategories = async () => {
+  categoriesLoading.value = true;
+  try {
+    const res = await getCategories(1);
+    if (res.code === 1 && Array.isArray(res.data)) {
+      categories.value = res.data;
+    }
+  } catch (e) {
+    console.error('加载分类失败', e);
+  } finally {
+    categoriesLoading.value = false;
+  }
 };
 
-// 表单数据（纯对象，用于 el-form）
+// 表单数据：category 存分类 ID（数字）
 const form = ref({
   title: '',
   category: '',
@@ -123,11 +129,12 @@ watch(
     { deep: true }
 );
 
-// 推荐标签（传递给子组件）
-const recommendTags = [
-  '热门', '原创', '生活', '教程', 'vlog',
-  '搞笑', '美食', '旅行', '音乐', '游戏'
-];
+// 推荐标签：优先用后台分类名，不足时用默认标签补齐
+const recommendTags = computed(() => {
+  const fromCats = categories.value.map((c) => c.name).filter(Boolean);
+  if (fromCats.length > 0) return fromCats;
+  return ['热门', '原创', '生活', '教程', 'vlog', '搞笑', '美食', '旅行', '音乐', '游戏'];
+});
 
 // 表单规则
 const formRules = {
@@ -155,11 +162,22 @@ const initDraft = () => {
   if (draft) {
     const parsed = JSON.parse(draft);
     parsed.tags = Array.isArray(parsed.tags) ? parsed.tags : [];
+    // 兼容旧草稿：若 category 是中文名/英文码，映射到后台分类 ID
+    const found = categories.value.find(
+        (c) => c.name === parsed.category || String(c.id) === String(parsed.category)
+    );
+    if (found) {
+      parsed.category = found.id;
+    } else if (parsed.category && !Number.isFinite(Number(parsed.category))) {
+      // 非法旧值直接清空，避免提交错误 ID
+      parsed.category = '';
+    }
     Object.assign(formData, parsed);
     form.value = JSON.parse(JSON.stringify(parsed));
   }
 };
-onMounted(() => {
+onMounted(async () => {
+  await loadCategories();
   initDraft();
 });
 
@@ -205,13 +223,18 @@ const handleSubmit = async () => {
     return ElMessage.warning('请完善必填项后提交');
   }
 
-  // 根据分类名称获取分类ID，默认为10（原创）
-  const categoryId = categoryMap[form.value.category] || 10;
+  // 分类 ID 来自后台接口，直接提交
+  const categoryId = Number(form.value.category);
+  if (!categoryId || !categories.value.some((c) => Number(c.id) === categoryId)) {
+    return ElMessage.error('请选择有效的内容分类');
+  }
+
+  const categoryName = categories.value.find((c) => Number(c.id) === categoryId)?.name || '';
 
   const submitData = {
     userId: Number(user.userInfo.id),
     title: form.value.title.trim(),
-    category: form.value.category,
+    category: categoryName,
     categoryId: categoryId,
     type: form.value.type,
     tags: form.value.tags.join(','),

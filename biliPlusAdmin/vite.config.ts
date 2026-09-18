@@ -36,6 +36,12 @@ export default defineConfig({
                 target: 'http://localhost:8081',
                 changeOrigin: true,
                 rewrite: (path) => path.replace(/^\/api/, '')
+            },
+            // 管理端预览直播走代理，避免 SRS CORS
+            '/srs-live': {
+                target: 'http://localhost:8080',
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/srs-live/, '/live')
             }
         }
     },

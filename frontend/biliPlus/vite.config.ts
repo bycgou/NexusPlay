@@ -43,6 +43,12 @@ export default defineConfig(({ mode }) => ({
                 changeOrigin: true,
                 rewrite: (path) => path.replace(/^\/api/, ''),
             },
+            // 浏览器拉流走代理，避免 SRS CORS
+            '/srs-live': {
+                target: 'http://localhost:8080',
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/srs-live/, '/live'),
+            },
         },
     },
     optimizeDeps: {

@@ -39,3 +39,21 @@ export const getUserInteractionStatus = (userId: number) => {
         method: 'get'
     })
 }
+
+// 我的点赞视频列表
+export const getMyLikedVideos = (page = 1, pageSize = 20) => {
+    return request({
+        url: '/pp/interaction/my/liked',
+        method: 'get',
+        params: { page, pageSize }
+    })
+}
+
+// 我的收藏视频列表
+export const getMyFavoriteVideos = (page = 1, pageSize = 20) => {
+    return request({
+        url: '/pp/interaction/my/favorite',
+        method: 'get',
+        params: { page, pageSize }
+    })
+}

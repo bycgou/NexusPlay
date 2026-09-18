@@ -94,3 +94,15 @@ image:
   upload:
     base-path: D:/MyOSS/biliPlus/video-website/Images/
     access-prefix: /images/
+
+# 直播配置
+live:
+  srs:
+    rtmp-host: localhost
+    rtmp-port: 1935
+    http-flv-base: http://localhost:8080/live
+    rtc-enabled: false          # 阶段6可打开
+  pk:
+    default-duration-sec: 300
+  gift:
+    max-count-per-request: 100

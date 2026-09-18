@@ -12,16 +12,18 @@
       <el-menu
           mode="horizontal"
           :ellipsis="false"
+          :default-active="activeNav"
           background-color="transparent"
           text-color="var(--ink-secondary)"
           active-text-color="var(--brand)"
           class="nav-menu"
+          router
       >
-        <el-menu-item index="home" class="nav-item" @click="openShouYe">首页</el-menu-item>
-        <el-menu-item index="animation" class="nav-item">动画</el-menu-item>
-        <el-menu-item index="comic" class="nav-item">番剧</el-menu-item>
-        <el-menu-item index="movie" class="nav-item">影视</el-menu-item>
-        <el-menu-item index="live" class="nav-item">直播</el-menu-item>
+        <el-menu-item index="/" class="nav-item">首页</el-menu-item>
+        <el-menu-item index="/channel/animation" class="nav-item">动画</el-menu-item>
+        <el-menu-item index="/anime" class="nav-item">番剧</el-menu-item>
+        <el-menu-item index="/channel/movie" class="nav-item">影视</el-menu-item>
+        <el-menu-item index="/live" class="nav-item">直播</el-menu-item>
       </el-menu>
 
       <!-- 右侧功能区 -->
@@ -90,8 +92,11 @@
                 <el-dropdown-item @click="openLoginDialog">登录</el-dropdown-item>
                 <el-dropdown-item @click="openRegisterDialog">注册</el-dropdown-item>
               </template>
-              <!-- 已登录：设置 + 退出 -->
+              <!-- 已登录：个人主页 + 设置 + 退出 -->
               <template v-else>
+                <el-dropdown-item @click="openProfile">
+                  <el-icon><User /></el-icon>个人主页
+                </el-dropdown-item>
                 <el-dropdown-item @click="openSettingDialog">
                   <el-icon><Setting /></el-icon>设置
                 </el-dropdown-item>
@@ -252,17 +257,29 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted, watch } from "vue";
+import { ref, reactive, onMounted, onUnmounted, watch, computed } from "vue";
 import router from "@/router/index.js";
 import { ElMessage } from 'element-plus';
 import axios from 'axios';
 import {useUserStore} from "@/store/user.js";
-import {useRouter} from "vue-router";
+import {useRouter, useRoute} from "vue-router";
 import { useTheme } from '@/composables/useTheme';
 import { getUnreadTotal } from '@/api/chat'
 
 const userStore = useUserStore();
+const route = useRoute();
 const { theme, toggleTheme } = useTheme();
+
+// 顶栏根据路由高亮
+const activeNav = computed(() => {
+  const path = route.path
+  if (path === '/' || path.startsWith('/video')) return '/'
+  if (path.startsWith('/channel/animation')) return '/channel/animation'
+  if (path.startsWith('/anime')) return '/anime'
+  if (path.startsWith('/channel/movie')) return '/channel/movie'
+  if (path.startsWith('/live')) return '/live'
+  return ''
+})
 
 // 未读私信数（0 时不显示红点）
 const unreadMsgCount = ref(0)
@@ -324,6 +341,10 @@ function openTougao() {
 function openShouYe(){
   console.log('首页');
   router.push('/');
+}
+
+function openLive(){
+  router.push('/live');
 }
 
 
@@ -618,6 +639,16 @@ function openSettingDialog(){
   router.push('/setting')
 }
 
+function openProfile(){
+  const id = userStore.userInfo?.id
+  if (!id) {
+    ElMessage.warning('请先登录')
+    dialogVisible.value = true
+    return
+  }
+  router.push(`/user/${id}`)
+}
+
 </script>
 
 <style scoped>
@@ -651,6 +682,15 @@ function openSettingDialog(){
   margin-right: var(--space-xl);
   cursor: pointer;
   flex-shrink: 0;
+  transition: transform var(--transition-fast);
+}
+
+.logo:hover {
+  transform: translateY(-1px);
+}
+
+.logo:active {
+  transform: scale(0.97);
 }
 
 .logo-img {
@@ -658,6 +698,12 @@ function openSettingDialog(){
   height: 32px;
   object-fit: contain;
   border-radius: var(--radius-sm);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.logo:hover .logo-img {
+  transform: rotate(-8deg) scale(1.08);
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.35);
 }
 
 .logo-text {
@@ -665,12 +711,17 @@ function openSettingDialog(){
   font-weight: 700;
   color: var(--brand);
   letter-spacing: -0.5px;
+  background: linear-gradient(90deg, var(--brand), #00aeec);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* 导航菜单 */
 .nav-menu {
   flex: 1;
   border-bottom: none;
+  background: transparent !important;
 }
 
 .nav-menu .el-menu-item {
@@ -680,17 +731,44 @@ function openSettingDialog(){
   margin: 0 var(--space-xs);
   border-bottom: 2px solid transparent;
   transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-menu .el-menu-item::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--brand), #00aeec);
+  transition: width var(--transition-base), left var(--transition-base);
+  border-radius: 2px 2px 0 0;
 }
 
 .nav-menu .el-menu-item:hover {
   color: var(--brand);
   background-color: var(--brand-bg);
+  transform: translateY(-1px);
+}
+
+.nav-menu .el-menu-item:hover::after {
+  width: 60%;
+  left: 20%;
 }
 
 .nav-menu .el-menu-item.is-active {
   color: var(--brand);
-  border-bottom-color: var(--brand);
+  border-bottom-color: transparent;
   font-weight: 600;
+  background-color: var(--brand-bg);
+}
+
+.nav-menu .el-menu-item.is-active::after {
+  width: 70%;
+  left: 15%;
+  box-shadow: 0 0 8px rgba(108, 92, 231, 0.55);
 }
 
 /* 右侧功能区 */
@@ -733,11 +811,16 @@ function openSettingDialog(){
   width: 36px;
   height: 36px;
   border-radius: var(--radius-md);
-  transition: background-color var(--transition-fast);
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
 }
 
 .notification-badge:hover {
   background-color: var(--brand-bg);
+  transform: translateY(-1px) scale(1.05);
+}
+
+.notification-badge:active {
+  transform: scale(0.94);
 }
 
 .action-icon {
@@ -779,6 +862,39 @@ function openSettingDialog(){
   padding: 8px 16px;
   font-weight: 500;
   border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--transition-fast), box-shadow var(--transition-base);
+}
+
+.submit-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.35),
+    transparent
+  );
+  transform: skewX(-20deg);
+  transition: left 0.55s ease;
+}
+
+.submit-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(108, 92, 231, 0.35);
+}
+
+.submit-btn:hover::before {
+  left: 130%;
+}
+
+.submit-btn:active {
+  transform: scale(0.97);
 }
 
 /* 用户菜单 */
@@ -790,22 +906,25 @@ function openSettingDialog(){
   white-space: nowrap;
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-md);
-  transition: background-color var(--transition-fast);
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
 }
 
 .user-menu:hover {
   background-color: var(--brand-bg);
+  transform: translateY(-1px);
 }
 
 .user-avatar {
   width: 32px;
   height: 32px;
   border: 2px solid var(--line);
-  transition: border-color var(--transition-fast);
+  transition: border-color var(--transition-fast), transform var(--transition-base), box-shadow var(--transition-base);
 }
 
 .user-menu:hover .user-avatar {
   border-color: var(--brand);
+  transform: scale(1.06) rotate(3deg);
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.25);
 }
 
 .user-name {

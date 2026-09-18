@@ -29,7 +29,12 @@ public class JwtTokenPeopleInterceptor implements HandlerInterceptor {
             "/pp/people/user/",
             "/pp/people/search",
             "/pp/interaction/video/",
-            "/pp/interaction/user/"
+            "/pp/interaction/user/",
+            "/pp/live/rooms",
+            "/pp/live/gifts",
+            "/pp/live/pk/active",
+            "/pp/live/rooms/", // 含详情/stream-status/mic history 等 GET
+            "/pp/anime" // 番剧列表/详情
     };
 
     @Override
@@ -41,10 +46,17 @@ public class JwtTokenPeopleInterceptor implements HandlerInterceptor {
         String path = request.getRequestURI();
         String method = request.getMethod();
         if ("GET".equalsIgnoreCase(method) || "OPTIONS".equalsIgnoreCase(method)) {
+            boolean isPublicGet = false;
             for (String prefix : PUBLIC_GET_PREFIXES) {
                 if (path.endsWith(prefix) || path.contains(prefix)) {
-                    return true;
+                    isPublicGet = true;
+                    break;
                 }
+            }
+            if (isPublicGet) {
+                // 公开 GET 也要尽量解析 token，否则「是否已关注/已点赞」永远拿不到当前用户
+                trySetCurrentUserFromHeader(request);
+                return true;
             }
         }
 
@@ -75,6 +87,25 @@ public class JwtTokenPeopleInterceptor implements HandlerInterceptor {
             log.warn("JWT 验证失败: {}", e.getMessage());
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return false;
+        }
+    }
+
+    /** 公开接口：有 token 则注入当前用户，无 token / 失败也放行 */
+    private void trySetCurrentUserFromHeader(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || authHeader.isEmpty()) {
+            return;
+        }
+        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+        try {
+            Claims claims = JwtUtil.parseJWT(jwtPeopleProperties.getPeopleSecretKey(), token);
+            Long userId = JwtUtil.extractUserId(claims);
+            if (userId != null) {
+                UserContext.setCurrentUserId(userId);
+                request.setAttribute("currentUserId", userId);
+            }
+        } catch (Exception e) {
+            // 匿名浏览场景忽略无效 token
         }
     }
 }

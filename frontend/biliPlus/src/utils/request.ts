@@ -24,6 +24,10 @@ service.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+        // FormData 上传：交给浏览器生成 boundary，避免被默认 json Content-Type 破坏
+        if (config.data instanceof FormData) {
+            config.headers['Content-Type'] = 'multipart/form-data';
+        }
         return config;
     },
     (error) => {

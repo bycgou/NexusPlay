@@ -27,6 +27,22 @@
         <el-icon><Grid /></el-icon>
         <span>分类管理</span>
       </el-menu-item>
+      <el-menu-item index="/Home/Live" class="menu-item">
+        <el-icon><VideoCamera /></el-icon>
+        <span>直播管理</span>
+      </el-menu-item>
+      <el-menu-item index="/Home/LiveCategory" class="menu-item">
+        <el-icon><Menu /></el-icon>
+        <span>直播分区</span>
+      </el-menu-item>
+      <el-menu-item index="/Home/Gift" class="menu-item">
+        <el-icon><Present /></el-icon>
+        <span>礼物管理</span>
+      </el-menu-item>
+      <el-menu-item index="/Home/GiftRecord" class="menu-item">
+        <el-icon><List /></el-icon>
+        <span>打赏流水</span>
+      </el-menu-item>
     </el-menu>
   </div>
 </template>
@@ -34,7 +50,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { VideoPlay, Grid, Picture } from '@element-plus/icons-vue'
+import { VideoPlay, Grid, Picture, VideoCamera, Present, List, Menu } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const activeMenu = computed(() => {
@@ -42,6 +58,10 @@ const activeMenu = computed(() => {
   if (path.startsWith('/Home/VideoShenHe')) return '/Home/VideoShenHe'
   if (path.startsWith('/Home/Banner')) return '/Home/Banner'
   if (path.startsWith('/Home/Category')) return '/Home/Category'
+  if (path.startsWith('/Home/LiveCategory')) return '/Home/LiveCategory'
+  if (path.startsWith('/Home/Live')) return '/Home/Live'
+  if (path.startsWith('/Home/GiftRecord')) return '/Home/GiftRecord'
+  if (path.startsWith('/Home/Gift')) return '/Home/Gift'
   return path
 })
 </script>

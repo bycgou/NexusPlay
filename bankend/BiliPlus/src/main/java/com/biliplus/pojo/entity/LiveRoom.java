@@ -43,4 +43,13 @@ public class LiveRoom {
 
     /** 更新时间 */
     private LocalDateTime updateTime;
+
+    /** 推流密钥 */
+    private String streamKey;
+
+    /** HTTP-FLV 拉流地址 */
+    private String playUrl;
+
+    /** RTMP 推流地址 */
+    private String pushUrl;
 }

@@ -14,7 +14,13 @@
           <div class="author-name">{{ video.author.name }}</div>
           <div class="author-fans">{{ formatCount(video.author.fansCount) }} 粉丝</div>
         </div>
-        <button class="follow-btn">关注</button>
+        <button
+          class="follow-btn"
+          :class="{ followed: video.followed }"
+          @click="$emit('follow')"
+        >
+          {{ video.followed ? '已关注' : '关注' }}
+        </button>
       </div>
     </div>
     <!-- 视频播放器 -->
@@ -39,6 +45,8 @@ defineProps({
     required: true
   }
 })
+
+defineEmits(['follow'])
 
 const formatCount = (num) => {
   if (num >= 10000) {
@@ -122,5 +130,12 @@ const formatCount = (num) => {
 }
 .follow-btn:hover {
   background-color: #d93025;
+}
+.follow-btn.followed {
+  background-color: #f5f5f5;
+  color: #666;
+}
+.follow-btn.followed:hover {
+  background-color: #e8e8e8;
 }
 </style>

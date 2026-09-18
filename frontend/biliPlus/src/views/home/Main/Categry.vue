@@ -38,7 +38,7 @@ const currentId = ref(null)
 
 const loadCategories = async () => {
   try {
-    const res = await getCategories()
+    const res = await getCategories(1)
     if (res.code === 1 && Array.isArray(res.data)) {
       categories.value = res.data
     }

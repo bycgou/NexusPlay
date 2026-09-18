@@ -250,4 +250,41 @@ public class PeopleUserServiceImpl implements PeopleUserService {
         }
         return result;
     }
+
+    @Override
+    public void changePassword(String oldPassword, String newPassword) {
+        Long currentUserId = UserContext.getCurrentUserId();
+        if (currentUserId == null) {
+            throw new RuntimeException("请先登录");
+        }
+        if (oldPassword == null || oldPassword.trim().isEmpty()) {
+            throw new RuntimeException("请输入原密码");
+        }
+        if (newPassword == null || newPassword.trim().isEmpty()) {
+            throw new RuntimeException("请输入新密码");
+        }
+        if (newPassword.length() < 8) {
+            throw new RuntimeException("新密码长度不能少于8位");
+        }
+        if (oldPassword.equals(newPassword)) {
+            throw new RuntimeException("新密码不能与原密码相同");
+        }
+
+        User user = peopleUserMapper.getUserById(currentUserId);
+        if (user == null || user.getPassword() == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new RuntimeException("原密码错误");
+        }
+
+        int rows = peopleUserMapper.updatePassword(
+                currentUserId,
+                passwordEncoder.encode(newPassword)
+        );
+        if (rows <= 0) {
+            throw new RuntimeException("密码修改失败，请重试");
+        }
+        log.info("用户修改密码成功, userId={}", currentUserId);
+    }
 }

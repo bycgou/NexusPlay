@@ -27,4 +27,7 @@ public interface PeopleUserService {
 
     /** 按昵称/用户名搜索用户（不含敏感字段） */
     java.util.List<UserDTO> searchUsers(String keyword, Integer limit);
+
+    /** 修改当前登录用户密码 */
+    void changePassword(String oldPassword, String newPassword);
 }

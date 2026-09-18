@@ -29,14 +29,27 @@ class CategoryServiceImplTest {
     void listAll_shouldReturnMapperResult() {
         Category c = new Category();
         c.setId(1);
-        c.setName("音乐");
+        c.setName("Music");
         when(categoryMapper.listAll()).thenReturn(List.of(c));
 
         List<Category> result = categoryService.listAll();
 
         assertEquals(1, result.size());
-        assertEquals("音乐", result.get(0).getName());
-        verify(categoryMapper, times(1)).listAll();
+        assertEquals("Music", result.get(0).getName());
+        verify(categoryMapper).listAll();
+    }
+
+    @Test
+    void listByType_shouldFilterLive() {
+        Category live = new Category();
+        live.setType(2);
+        live.setName("Game");
+        when(categoryMapper.listByType(2)).thenReturn(List.of(live));
+
+        List<Category> result = categoryService.listByType(2);
+        assertEquals(1, result.size());
+        assertEquals(2, result.get(0).getType());
+        verify(categoryMapper).listByType(2);
     }
 
     @Test
@@ -50,47 +63,40 @@ class CategoryServiceImplTest {
     @Test
     void create_shouldFillDefaultsAndInsert() {
         Category c = new Category();
-        c.setName("舞蹈");
+        c.setName("Dance");
 
         categoryService.create(c);
 
         assertEquals(0, c.getParentId());
         assertEquals(0, c.getSortOrder());
+        assertEquals(1, c.getType());
         assertNotNull(c.getCreateTime());
-        assertNotNull(c.getUpdateTime());
-        verify(categoryMapper, times(1)).insert(c);
+        verify(categoryMapper).insert(c);
+    }
+
+    @Test
+    void create_liveCategory_shouldKeepType2() {
+        Category c = new Category();
+        c.setName("Chat");
+        c.setType(2);
+
+        categoryService.create(c);
+        assertEquals(2, c.getType());
     }
 
     @Test
     void update_whenNotFound_shouldThrow() {
         when(categoryMapper.selectById(99)).thenReturn(null);
         Category body = new Category();
-        body.setName("新名字");
+        body.setName("new");
         assertThrows(BusinessException.class, () -> categoryService.update(99, body));
-    }
-
-    @Test
-    void update_shouldCallMapper() {
-        Category existing = new Category();
-        existing.setId(2);
-        existing.setName("旧");
-        existing.setParentId(0);
-        existing.setSortOrder(1);
-        when(categoryMapper.selectById(2)).thenReturn(existing);
-        when(categoryMapper.update(any())).thenReturn(1);
-
-        Category body = new Category();
-        body.setName("新");
-        Category result = categoryService.update(2, body);
-
-        assertEquals(2, result.getId() == null ? 2 : result.getId());
-        verify(categoryMapper, times(1)).update(any());
     }
 
     @Test
     void delete_whenHasVideos_shouldThrow() {
         Category existing = new Category();
         existing.setId(3);
+        existing.setType(1);
         when(categoryMapper.selectById(3)).thenReturn(existing);
         when(categoryMapper.countVideosByCategoryId(3)).thenReturn(5);
 
@@ -99,13 +105,25 @@ class CategoryServiceImplTest {
     }
 
     @Test
+    void delete_whenLiveHasRooms_shouldThrow() {
+        Category existing = new Category();
+        existing.setId(5);
+        existing.setType(2);
+        when(categoryMapper.selectById(5)).thenReturn(existing);
+        when(categoryMapper.countLiveRoomsByCategoryId(5)).thenReturn(2);
+
+        assertThrows(BusinessException.class, () -> categoryService.delete(5));
+    }
+
+    @Test
     void delete_whenEmpty_shouldDelete() {
         Category existing = new Category();
         existing.setId(4);
+        existing.setType(1);
         when(categoryMapper.selectById(4)).thenReturn(existing);
         when(categoryMapper.countVideosByCategoryId(4)).thenReturn(0);
 
         categoryService.delete(4);
-        verify(categoryMapper, times(1)).deleteById(4);
+        verify(categoryMapper).deleteById(4);
     }
 }

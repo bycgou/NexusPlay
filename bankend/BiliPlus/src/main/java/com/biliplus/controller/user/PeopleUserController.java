@@ -2,6 +2,7 @@ package com.biliplus.controller.user;
 
 import com.biliplus.constant.AllConstant;
 
+import com.biliplus.pojo.dto.userdto.ChangePasswordDTO;
 import com.biliplus.pojo.dto.userdto.UserDTO;
 import com.biliplus.pojo.dto.userdto.UserRegisterDTO;
 import com.biliplus.pojo.dto.userdto.VideoUploadDTO;
@@ -192,6 +193,20 @@ public class PeopleUserController {
         peopleUserService.updateUser(userDTO);
         return Result.success();
    }
+
+    /** 修改当前登录用户密码 */
+    @PostMapping("/changePassword")
+    public Result changePassword(@RequestBody ChangePasswordDTO dto) {
+        Long userId = com.biliplus.utils.UserContext.getCurrentUserId();
+        log.info("用户修改密码 userId={}", userId);
+        try {
+            peopleUserService.changePassword(dto.getOldPassword(), dto.getNewPassword());
+            return Result.success();
+        } catch (Exception e) {
+            log.warn("修改密码失败 userId={}, msg={}", userId, e.getMessage());
+            return Result.error(e.getMessage());
+        }
+    }
 
    // 根据id查询用户信息
     @GetMapping("/user/{userId}")

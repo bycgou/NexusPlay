@@ -31,6 +31,30 @@ const routes: RouteRecordRaw[] = [
                 name: 'BannerManage',
                 component: () => import('@/views/Banner/BannerManage.vue'),
                 meta: { title: '轮播图管理' }
+            },
+            {
+                path: 'Live',
+                name: 'LiveManage',
+                component: () => import('@/views/Live/LiveManage.vue'),
+                meta: { title: '直播管理' }
+            },
+            {
+                path: 'LiveCategory',
+                name: 'LiveCategory',
+                component: () => import('@/views/Live/LiveCategory.vue'),
+                meta: { title: '直播分区' }
+            },
+            {
+                path: 'Gift',
+                name: 'GiftManage',
+                component: () => import('@/views/Gift/GiftManage.vue'),
+                meta: { title: '礼物管理' }
+            },
+            {
+                path: 'GiftRecord',
+                name: 'GiftRecord',
+                component: () => import('@/views/Gift/GiftRecord.vue'),
+                meta: { title: '打赏流水' }
             }
         ]
     },

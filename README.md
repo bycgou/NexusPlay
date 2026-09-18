@@ -10,7 +10,8 @@ B 站风格视频社区（BiliPlus），包含用户前台、后端 API 与管�
 | `bankend/BiliPlus` | 后端（Spring Boot 3 + MyBatis + MySQL + Redis） |
 | `biliPlusAdmin` | 管理后台（Vue 3 + Vite） |
 | `biliplus.sql` | 数据库结构脚本 |
-| `FIX_PLAN.md` / `DEV_PLAN.md` / `LIVE_*.md` | 开发与修复计划文档 |
+| `FIX_PLAN.md` / `DEV_PLAN.md` / `LIVE_*.md` | 历史开发与修复计划 |
+| `UPGRADE_PLAN.md` | 下一阶段升级开发文档（体验/直播/社区/运营） |
 
 ## 快速启动
 

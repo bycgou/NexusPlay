@@ -8,6 +8,8 @@ public interface CategoryService {
 
     List<Category> listAll();
 
+    List<Category> listByType(Integer type);
+
     Category create(Category category);
 
     Category update(Integer id, Category category);
