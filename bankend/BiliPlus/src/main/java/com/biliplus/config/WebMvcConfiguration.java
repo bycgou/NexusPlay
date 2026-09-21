@@ -50,13 +50,31 @@ public class WebMvcConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        String[] origins = allowedOrigins.split(",");
+        java.util.List<String> cleaned = new java.util.ArrayList<>();
+        for (String origin : origins) {
+            String trimmed = origin.trim();
+            if (!trimmed.isEmpty()) {
+                cleaned.add(trimmed);
+            }
+        }
+        if (cleaned.isEmpty()) {
+            log.warn("app.cors.allowed-origins 未配置，跨域请求将全部被拒绝；"
+                    + "请通过环境变量 CORS_ALLOWED_ORIGINS 配置允许的来源");
+        } else {
+            log.info("CORS 允许来源: {}", cleaned);
+        }
         registry.addMapping("/**")
-                .allowedOriginPatterns("http://localhost:*", "http://127.0.0.1:*")
+                .allowedOriginPatterns(cleaned.isEmpty() ? new String[0] : cleaned.toArray(new String[0]))
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
                 .maxAge(3600);
     }
+
+    /** 逗号分隔的允许来源，生产必须覆盖为真实域名 */
+    @Value("${app.cors.allowed-origins:}")
+    private String allowedOrigins;
 
     @Value("${video.upload.base-path}")
     private String basePath;

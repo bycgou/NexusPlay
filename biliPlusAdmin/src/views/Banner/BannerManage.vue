@@ -8,6 +8,7 @@ import {
   deleteBanner,
   type Banner
 } from '@/api/banner'
+import ImageUpload from '@/components/ImageUpload.vue'
 
 const loading = ref(false)
 const list = ref<Banner[]>([])
@@ -108,10 +109,6 @@ const handleDelete = async (row: Banner) => {
   }
 }
 
-const handleUploadSuccess = (url: string) => {
-  form.value.imageUrl = url
-}
-
 onMounted(loadList)
 </script>
 
@@ -172,9 +169,8 @@ onMounted(loadList)
         <el-form-item label="描述">
           <el-input v-model="form.description" maxlength="255" placeholder="副标题/描述，可空" />
         </el-form-item>
-        <el-form-item label="图片URL" required>
-          <el-input v-model="form.imageUrl" placeholder="如 /longshu-banner.jpg 或完整 http 地址" />
-          <div class="tip">可先用「投稿」或封面上传得到图片地址后粘贴；也可填站内 public 路径</div>
+        <el-form-item label="图片" required>
+          <ImageUpload v-model="form.imageUrl" tip="上传轮播图" />
         </el-form-item>
         <el-form-item label="跳转类型">
           <el-radio-group v-model="form.linkType">

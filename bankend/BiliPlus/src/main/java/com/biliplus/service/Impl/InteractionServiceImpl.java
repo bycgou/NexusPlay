@@ -1,22 +1,37 @@
 package com.biliplus.service.Impl;
 
+import com.biliplus.constant.Notify;
 import com.biliplus.exception.BusinessException;
+import com.biliplus.mapper.PeopleUserMapper;
 import com.biliplus.mapper.UserFollowMapper;
 import com.biliplus.mapper.VideoFavoriteMapper;
 import com.biliplus.mapper.VideoLikeMapper;
 import com.biliplus.mapper.VideoMapper;
+import com.biliplus.pojo.entity.User;
 import com.biliplus.pojo.entity.UserFollow;
+import com.biliplus.pojo.entity.Video;
 import com.biliplus.pojo.entity.VideoFavorite;
 import com.biliplus.pojo.entity.VideoLike;
+import com.biliplus.pojo.vo.GetListVideoVO;
+import com.biliplus.result.PageResult;
+import com.biliplus.service.FavoriteFolderService;
 import com.biliplus.service.InteractionService;
+import com.biliplus.service.NotificationService;
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -33,6 +48,24 @@ public class InteractionServiceImpl implements InteractionService {
 
     @Autowired
     private VideoMapper videoMapper;
+
+    @Autowired
+    private PeopleUserMapper peopleUserMapper;
+
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
+    private FavoriteFolderService favoriteFolderService;
+
+    private String resolveNickname(Long userId) {
+        User user = peopleUserMapper.getUserById(userId);
+        if (user == null) {
+            return "用户" + userId;
+        }
+        return org.springframework.util.StringUtils.hasText(user.getNickname())
+                ? user.getNickname() : user.getUsername();
+    }
 
     @Override
     @Transactional
@@ -65,7 +98,7 @@ public class InteractionServiceImpl implements InteractionService {
 
     @Override
     @Transactional
-    public Map<String, Object> toggleFavorite(Long videoId, Long userId) {
+    public Map<String, Object> toggleFavorite(Long videoId, Long userId, Long folderId) {
         Map<String, Object> result = new HashMap<>();
         if (userId == null) {
             throw new BusinessException("请先登录");
@@ -77,13 +110,17 @@ public class InteractionServiceImpl implements InteractionService {
             result.put("collected", false);
             log.info("取消收藏: videoId={}, userId={}", videoId, userId);
         } else {
+            // 缺省进默认收藏夹；显式指定时校验归属
+            Long resolvedFolderId = favoriteFolderService.resolveFolderId(userId, folderId);
             VideoFavorite videoFavorite = new VideoFavorite();
             videoFavorite.setVideoId(videoId);
+            videoFavorite.setFolderId(resolvedFolderId);
             videoFavorite.setUserId(userId);
             videoFavorite.setCreateTime(LocalDateTime.now());
             videoFavoriteMapper.insert(videoFavorite);
             result.put("collected", true);
-            log.info("添加收藏: videoId={}, userId={}", videoId, userId);
+            result.put("folderId", resolvedFolderId);
+            log.info("添加收藏: videoId={}, userId={}, folderId={}", videoId, userId, resolvedFolderId);
         }
 
         result.put("favoriteCount", videoFavoriteMapper.countByVideoId(videoId));
@@ -116,6 +153,9 @@ public class InteractionServiceImpl implements InteractionService {
             userFollowMapper.insert(userFollow);
             result.put("followed", true);
             log.info("添加关注: userId={}, followUserId={}", followerId, followingId);
+            // 仅在关注时通知，取关不打扰
+            notificationService.notify(followingId, followerId, Notify.TYPE_FOLLOW,
+                    resolveNickname(followerId) + " 关注了你", null, null, null);
         }
 
         result.put("fansCount", userFollowMapper.countFans(followingId));
@@ -149,5 +189,66 @@ public class InteractionServiceImpl implements InteractionService {
         result.put("followingCount", userFollowMapper.countFollowing(targetUserId));
 
         return result;
+    }
+
+    @Override
+    public PageResult listLikedVideos(Long userId, Integer page, Integer pageSize) {
+        if (userId == null) {
+            throw new BusinessException("请先登录");
+        }
+        PageHelper.startPage(page == null ? 1 : page, pageSize == null ? 20 : pageSize);
+        Page<Video> videoPage = videoLikeMapper.pageLikedVideos(userId);
+        return buildVideoPageResult(videoPage);
+    }
+
+    @Override
+    public PageResult listFavoriteVideos(Long userId, Integer page, Integer pageSize) {
+        if (userId == null) {
+            throw new BusinessException("请先登录");
+        }
+        PageHelper.startPage(page == null ? 1 : page, pageSize == null ? 20 : pageSize);
+        Page<Video> videoPage = videoFavoriteMapper.pageFavoriteVideos(userId);
+        return buildVideoPageResult(videoPage);
+    }
+
+    private PageResult buildVideoPageResult(Page<Video> videoPage) {
+        List<Video> records = videoPage.getResult();
+        List<GetListVideoVO> voList = new ArrayList<>();
+        if (records != null && !records.isEmpty()) {
+            Set<Long> userIds = records.stream()
+                    .map(Video::getUserId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            Map<Long, User> userMap = new HashMap<>();
+            if (!userIds.isEmpty()) {
+                List<User> users = peopleUserMapper.selectByIds(new ArrayList<>(userIds));
+                userMap = users.stream().collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
+            }
+            for (Video video : records) {
+                GetListVideoVO vo = new GetListVideoVO();
+                vo.setId(video.getId());
+                vo.setTitle(video.getTitle());
+                vo.setDescription(video.getDescription());
+                vo.setCoverUrl(video.getCoverUrl());
+                vo.setVideoUrl(video.getVideoUrl());
+                vo.setDuration(video.getDuration());
+                vo.setUserId(video.getUserId());
+                vo.setCategoryId(video.getCategoryId());
+                vo.setStatus(video.getStatus());
+                vo.setViewCount(video.getViewCount());
+                vo.setLikeCount(video.getLikeCount());
+                vo.setCommentCount(video.getCommentCount());
+                vo.setShareCount(video.getShareCount());
+                vo.setCreateTime(video.getCreateTime());
+                vo.setUpdateTime(video.getUpdateTime());
+                User user = userMap.get(video.getUserId());
+                if (user != null) {
+                    vo.setNickname(user.getNickname());
+                    vo.setAvatar(user.getAvatar());
+                }
+                voList.add(vo);
+            }
+        }
+        return new PageResult(videoPage.getTotal(), voList);
     }
 }

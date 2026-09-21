@@ -1,16 +1,19 @@
 server:
   address: 0.0.0.0
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 app:
   external-url: ${EXTERNAL_URL:http://localhost:8081}
+  # 生产必须显式配置，逗号分隔真实前端域名
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
 
 spring:
   application:
     name: BiliPlus
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/biliplus?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT:3306}/${DB_NAME:biliplus}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
@@ -40,8 +43,8 @@ spring:
   data:
     redis:
       database: 0
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
       timeout: 20000
       jedis:
         pool:
@@ -64,14 +67,30 @@ biliplus:
     people-ttl: 86400000
     people-token-name: peopleToken
 
-# 📁 路径改为 Linux 路径！
+# 📁 路径改为部署环境路径（默认与宝塔示例一致）
 video:
   upload:
-    base-path: /www/wwwroot/videos/      # 👈 视频存储目录（与宝塔一致）
-    temp-path: /www/wwwroot/videos/temp/ # 分片临时目录
-    access-prefix: /videos/              # 前端访问前缀（对应 Nginx /videos/）
+    base-path: ${VIDEO_UPLOAD_PATH:/www/wwwroot/videos/}      # 👈 视频存储目录（与宝塔一致）
+    temp-path: ${VIDEO_TEMP_PATH:/www/wwwroot/videos/temp/}   # 分片临时目录
+    access-prefix: /videos/                                   # 前端访问前缀（对应 Nginx /videos/）
 
 image:
   upload:
-    base-path: /www/wwwroot/images/      # 👈 图片存储目录
+    base-path: ${IMAGE_UPLOAD_PATH:/www/wwwroot/images/}      # 👈 图片存储目录
     access-prefix: /images/
+
+# 直播：生产按实际 SRS 部署注入，无 RTC 时保持 false（连麦走降级提示）
+live:
+  srs:
+    rtmp-host: ${SRS_RTMP_HOST}
+    rtmp-port: ${SRS_RTMP_PORT:1935}
+    http-flv-base: ${SRS_FLV_BASE}
+    rtc-enabled: ${SRS_RTC_ENABLED:false}
+  pk:
+    default-duration-sec: ${LIVE_PK_DURATION_SEC:300}
+  gift:
+    max-count-per-request: 100
+  # 直播回放：SRS 开启录制后打开，并给出录制文件点播地址模板
+  replay:
+    enabled: ${LIVE_REPLAY_ENABLED:false}
+    play-url-template: ${LIVE_REPLAY_URL_TEMPLATE:}

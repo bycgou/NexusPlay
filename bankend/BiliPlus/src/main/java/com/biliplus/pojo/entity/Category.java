@@ -43,6 +43,12 @@ public class Category {
     private String icon;
 
     /**
+     * 分区类型：1-视频分区，2-直播分区
+     * 对应表字段：type (tinyint NOT NULL DEFAULT 1)
+     */
+    private Integer type;
+
+    /**
      * 创建时间（非空，默认当前时间）
      * 分类创建时自动填充，无需手动设置
      * 对应表字段：create_time (datetime NOT NULL DEFAULT CURRENT_TIMESTAMP)

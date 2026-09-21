@@ -17,10 +17,10 @@ public class CategoryController {
     @Autowired
     private CategoryService categoryService;
 
-    /** 获取分类列表 */
+    /** 获取分类列表；type=2 为直播分区 */
     @GetMapping("/list")
-    public Result<List<Category>> list() {
-        return Result.success(categoryService.listAll());
+    public Result<List<Category>> list(@RequestParam(required = false) Integer type) {
+        return Result.success(categoryService.listByType(type));
     }
 
     /** 新增视频分类 */

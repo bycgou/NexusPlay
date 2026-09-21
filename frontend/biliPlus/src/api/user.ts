@@ -52,6 +52,15 @@ export const updateUserInfo = (data: any) => {
     })
 };
 
+// 修改密码
+export const changePassword = (data: { oldPassword: string; newPassword: string }) => {
+    return request({
+        url: '/pp/people/changePassword',
+        method: 'post',
+        data
+    })
+};
+
 // 搜索用户（昵称/用户名）
 export const searchUsers = (keyword: string, limit = 20) => {
     return request({

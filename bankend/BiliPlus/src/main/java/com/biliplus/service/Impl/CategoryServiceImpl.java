@@ -25,6 +25,14 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    public List<Category> listByType(Integer type) {
+        if (type == null) {
+            return categoryMapper.listAll();
+        }
+        return categoryMapper.listByType(type);
+    }
+
+    @Override
     public Category create(Category category) {
         if (category == null || !StringUtils.hasText(category.getName())) {
             throw new BusinessException("分类名称不能为空");
@@ -37,6 +45,9 @@ public class CategoryServiceImpl implements CategoryService {
         }
         if (category.getSortOrder() == null) {
             category.setSortOrder(0);
+        }
+        if (category.getType() == null) {
+            category.setType(1);
         }
         category.setCreateTime(LocalDateTime.now());
         category.setUpdateTime(LocalDateTime.now());
@@ -63,6 +74,9 @@ public class CategoryServiceImpl implements CategoryService {
         if (category.getSortOrder() == null) {
             category.setSortOrder(existing.getSortOrder());
         }
+        if (category.getType() == null) {
+            category.setType(existing.getType() == null ? 1 : existing.getType());
+        }
         category.setUpdateTime(LocalDateTime.now());
         int rows = categoryMapper.update(category);
         if (rows <= 0) {
@@ -80,9 +94,16 @@ public class CategoryServiceImpl implements CategoryService {
         if (existing == null) {
             throw new BusinessException("分类不存在");
         }
-        int videoCount = categoryMapper.countVideosByCategoryId(id);
-        if (videoCount > 0) {
-            throw new BusinessException("该分类下仍有视频，无法删除");
+        if (existing.getType() != null && existing.getType() == 2) {
+            int liveCount = categoryMapper.countLiveRoomsByCategoryId(id);
+            if (liveCount > 0) {
+                throw new BusinessException("该直播分区下仍有直播间，无法删除");
+            }
+        } else {
+            int videoCount = categoryMapper.countVideosByCategoryId(id);
+            if (videoCount > 0) {
+                throw new BusinessException("该分类下仍有视频，无法删除");
+            }
         }
         categoryMapper.deleteById(id);
     }

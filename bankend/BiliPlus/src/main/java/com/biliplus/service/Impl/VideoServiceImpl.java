@@ -124,9 +124,18 @@ public class VideoServiceImpl implements VideoService {
     public PageResult recommend() {
         // PageHelper 会自动追加 LIMIT，SQL 里不要再写 limit
         PageHelper.startPage(1, 10);
-        Page<Video> page = videoMapper.recommend();
-        long total = page.getTotal();
-        List<Video> records = page.getResult();
-        return new PageResult(total, records);
+        Page<GetListVideoVO> page = videoMapper.recommend();
+        return new PageResult(page.getTotal(), page.getResult());
+    }
+
+    @Override
+    public Long share(Long videoId) {
+        if (videoId == null) {
+            throw new com.biliplus.exception.BusinessException("视频ID不能为空");
+        }
+        // 未通过审核或已下架的稿件不计分享数（影响行数为 0）
+        videoMapper.increaseShareCount(videoId);
+        Integer count = videoMapper.selectShareCount(videoId);
+        return count == null ? null : count.longValue();
     }
 }

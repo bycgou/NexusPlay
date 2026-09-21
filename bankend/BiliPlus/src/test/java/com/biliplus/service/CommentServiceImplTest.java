@@ -35,6 +35,12 @@ class CommentServiceImplTest {
     @Mock
     private UserLikeMapper userLikeMapper;
 
+    @Mock
+    private com.biliplus.mapper.PeopleUserMapper peopleUserMapper;
+
+    @Mock
+    private NotificationService notificationService;
+
     @InjectMocks
     private CommentServiceImpl commentService;
 

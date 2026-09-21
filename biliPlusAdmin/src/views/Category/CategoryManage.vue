@@ -8,18 +8,19 @@ import {
   deleteCategory,
   type Category
 } from '@/api/category'
+import ImageUpload from '@/components/ImageUpload.vue'
 
 const loading = ref(false)
 const list = ref<Category[]>([])
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增分类')
-const form = ref<Category>({ name: '', parentId: 0, sortOrder: 0, icon: '' })
+const form = ref<Category>({ name: '', parentId: 0, sortOrder: 0, icon: '', type: 1 })
 const editingId = ref<number | null>(null)
 
 const loadList = async () => {
   loading.value = true
   try {
-    const res = await getCategoryList()
+    const res = await getCategoryList(1)
     list.value = res.data || []
   } catch (e) {
     console.error(e)
@@ -31,7 +32,7 @@ const loadList = async () => {
 const openCreate = () => {
   dialogTitle.value = '新增分类'
   editingId.value = null
-  form.value = { name: '', parentId: 0, sortOrder: 0, icon: '' }
+  form.value = { name: '', parentId: 0, sortOrder: 0, icon: '', type: 1 }
   dialogVisible.value = true
 }
 
@@ -42,7 +43,8 @@ const openEdit = (row: Category) => {
     name: row.name,
     parentId: row.parentId ?? 0,
     sortOrder: row.sortOrder ?? 0,
-    icon: row.icon || ''
+    icon: row.icon || '',
+    type: row.type ?? 1
   }
   dialogVisible.value = true
 }
@@ -53,11 +55,12 @@ const handleSubmit = async () => {
     return
   }
   try {
+    const payload = { ...form.value, type: form.value.type ?? 1 }
     if (editingId.value) {
-      await updateCategory(editingId.value, form.value)
+      await updateCategory(editingId.value, payload)
       ElMessage.success('修改成功')
     } else {
-      await createCategory(form.value)
+      await createCategory(payload)
       ElMessage.success('新增成功')
     }
     dialogVisible.value = false
@@ -93,7 +96,17 @@ onMounted(loadList)
       <el-table-column prop="name" label="名称" min-width="140" />
       <el-table-column prop="parentId" label="父分类ID" width="110" />
       <el-table-column prop="sortOrder" label="排序" width="90" />
-      <el-table-column prop="icon" label="图标" min-width="140" show-overflow-tooltip />
+      <el-table-column prop="icon" label="图标" width="90">
+        <template #default="scope">
+          <el-image
+              v-if="scope.row.icon"
+              :src="scope.row.icon"
+              style="width: 36px; height: 36px; border-radius: 4px;"
+              fit="cover"
+          />
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="createTime" label="创建时间" width="170" />
       <el-table-column label="操作" width="160" fixed="right">
         <template #default="scope">
@@ -103,7 +116,7 @@ onMounted(loadList)
       </el-table-column>
     </el-table>
 
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="480px">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="520px">
       <el-form label-width="90px">
         <el-form-item label="名称" required>
           <el-input v-model="form.name" placeholder="分类名称" maxlength="50" />
@@ -114,8 +127,8 @@ onMounted(loadList)
         <el-form-item label="排序">
           <el-input-number v-model="form.sortOrder" :min="0" />
         </el-form-item>
-        <el-form-item label="图标URL">
-          <el-input v-model="form.icon" placeholder="可选" />
+        <el-form-item label="图标">
+          <ImageUpload v-model="form.icon" tip="上传图标（可选）" />
         </el-form-item>
       </el-form>
       <template #footer>

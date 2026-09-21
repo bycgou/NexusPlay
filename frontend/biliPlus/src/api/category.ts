@@ -1,10 +1,11 @@
 import request from '@/utils/request'
 
-// 获取公开分类列表
-export const getCategories = () => {
+// 获取公开分类列表；type=1 视频，type=2 直播
+export const getCategories = (type?: number) => {
     return request({
         url: '/pp/categories',
-        method: 'get'
+        method: 'get',
+        params: type ? { type } : undefined
     })
 }
 

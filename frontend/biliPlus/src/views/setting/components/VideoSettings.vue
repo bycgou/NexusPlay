@@ -1,10 +1,28 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { getMyVideos } from '@/api/myVideo'
+import { computed, onMounted, ref } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRouter } from 'vue-router'
+import { getMyVideos, updateMyVideo, deleteMyVideo, resubmitMyVideo } from '@/api/myVideo'
+import { getCategories } from '@/api/category'
+import ImageUploader from '@/components/ImageUploader.vue'
+import TagEditor from '@/views/contribution/components/TagEditor.vue'
+
+interface MyVideo {
+  id: number
+  title: string
+  description?: string
+  coverUrl?: string
+  categoryId?: number
+  status?: number
+  rejectReason?: string
+  tags?: string
+  createTime?: string
+}
+
+const router = useRouter()
 
 const loading = ref(false)
-const videos = ref<any[]>([])
+const videos = ref<MyVideo[]>([])
 
 const statusText = (s?: number) => {
   if (s === 0) return '审核中'
@@ -22,6 +40,8 @@ const statusType = (s?: number) => {
   return 'info'
 }
 
+const canResubmit = (s?: number) => s === 2 || s === 3
+
 const loadVideos = async () => {
   loading.value = true
   try {
@@ -38,7 +58,135 @@ const loadVideos = async () => {
   }
 }
 
-onMounted(loadVideos)
+// ===== 分类下拉 =====
+
+const categories = ref<{ id: number; name: string }[]>([])
+
+const loadCategories = async () => {
+  try {
+    const res = await getCategories(1)
+    if (res.code === 1 && Array.isArray(res.data)) {
+      categories.value = res.data
+    }
+  } catch (e) {
+    console.warn('加载分类失败', e)
+  }
+}
+
+// ===== 编辑弹窗 =====
+
+const editVisible = ref(false)
+const submitting = ref(false)
+const editingId = ref<number | null>(null)
+const form = ref({
+  title: '',
+  description: '',
+  categoryId: undefined as number | undefined,
+  coverUrl: '',
+  tags: [] as string[]
+})
+
+const dialogTitle = computed(() => `编辑稿件 #${editingId.value ?? ''}`)
+
+const recommendTags = ['原创', 'VLOG', '游戏', '音乐', '科技', '生活', '学习', '鬼畜']
+
+const openEdit = (item: MyVideo) => {
+  editingId.value = item.id
+  form.value = {
+    title: item.title || '',
+    description: item.description || '',
+    categoryId: item.categoryId,
+    coverUrl: item.coverUrl || '',
+    // 后端以逗号分隔字符串返回
+    tags: item.tags ? item.tags.split(',').filter((t) => t.trim()).map((t) => t.trim()) : []
+  }
+  editVisible.value = true
+}
+
+const submitEdit = async () => {
+  if (editingId.value == null) return
+
+  const title = form.value.title.trim()
+  if (!title) {
+    ElMessage.warning('请填写视频标题')
+    return
+  }
+  if (title.length > 100) {
+    ElMessage.warning('标题不能超过100字')
+    return
+  }
+
+  submitting.value = true
+  try {
+    const res = await updateMyVideo(editingId.value, {
+      title,
+      description: form.value.description,
+      categoryId: form.value.categoryId,
+      coverUrl: form.value.coverUrl,
+      tags: form.value.tags.join(',')
+    })
+    if (res.code === 1) {
+      ElMessage.success('修改已保存')
+      editVisible.value = false
+      await loadVideos()
+    } else {
+      ElMessage.error(res.msg || '保存失败')
+    }
+  } catch (e) {
+    console.error('编辑稿件失败', e)
+  } finally {
+    submitting.value = false
+  }
+}
+
+// ===== 重提 / 删除 =====
+
+const handleResubmit = async (item: MyVideo) => {
+  try {
+    const res = await resubmitMyVideo(item.id)
+    if (res.code === 1) {
+      ElMessage.success('已重新提交审核')
+      await loadVideos()
+    } else {
+      ElMessage.error(res.msg || '重新提交失败')
+    }
+  } catch (e) {
+    console.error('重新提交失败', e)
+  }
+}
+
+const handleDelete = async (item: MyVideo) => {
+  try {
+    await ElMessageBox.confirm(
+      `删除后《${item.title}》将不再展示，且无法在用户端恢复。确定删除吗？`,
+      '删除稿件',
+      { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' }
+    )
+  } catch {
+    // 用户取消
+    return
+  }
+  try {
+    const res = await deleteMyVideo(item.id)
+    if (res.code === 1) {
+      ElMessage.success('稿件已删除')
+      await loadVideos()
+    } else {
+      ElMessage.error(res.msg || '删除失败')
+    }
+  } catch (e) {
+    console.error('删除稿件失败', e)
+  }
+}
+
+const goWatch = (item: MyVideo) => {
+  router.push(`/video/${item.id}`)
+}
+
+onMounted(() => {
+  loadVideos()
+  loadCategories()
+})
 </script>
 
 <template>
@@ -60,6 +208,7 @@ onMounted(loadVideos)
           </div>
           <div class="meta">
             投稿时间：{{ item.createTime || '—' }}
+            <template v-if="item.tags"> · 标签：{{ item.tags }}</template>
           </div>
           <el-alert
               v-if="item.status === 3 && item.rejectReason"
@@ -73,9 +222,73 @@ onMounted(loadVideos)
           </el-alert>
           <div v-else-if="item.status === 0" class="tip">视频正在审核中，请耐心等待</div>
           <div v-else-if="item.status === 1" class="tip ok">视频已通过审核并展示</div>
+          <div v-else-if="item.status === 2" class="tip">视频已下架，可修改后重新提交</div>
+
+          <div class="actions">
+            <el-button size="small" @click="openEdit(item)">编辑</el-button>
+            <el-button
+                v-if="canResubmit(item.status)"
+                size="small"
+                type="primary"
+                @click="handleResubmit(item)"
+            >
+              重新提交
+            </el-button>
+            <el-button
+                v-if="item.status === 1"
+                size="small"
+                @click="goWatch(item)"
+            >
+              去观看
+            </el-button>
+            <el-button size="small" type="danger" plain @click="handleDelete(item)">删除</el-button>
+          </div>
         </div>
       </div>
     </div>
+
+    <el-dialog v-model="editVisible" :title="dialogTitle" width="620px">
+      <el-form label-width="72px">
+        <el-form-item label="标题" required>
+          <el-input v-model="form.title" maxlength="100" show-word-limit placeholder="请输入视频标题" />
+        </el-form-item>
+        <el-form-item label="简介">
+          <el-input
+              v-model="form.description"
+              type="textarea"
+              :rows="4"
+              maxlength="2000"
+              show-word-limit
+              placeholder="介绍一下这个视频"
+          />
+        </el-form-item>
+        <el-form-item label="分区">
+          <el-select v-model="form.categoryId" placeholder="请选择分区" style="width: 220px">
+            <el-option
+                v-for="c in categories"
+                :key="c.id"
+                :label="c.name"
+                :value="c.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="封面">
+          <ImageUploader v-model="form.coverUrl" tip="点击上传封面" />
+        </el-form-item>
+        <el-form-item label="标签">
+          <TagEditor v-model="form.tags" :recommend-tags="recommendTags" />
+        </el-form-item>
+        <el-alert
+            type="info"
+            :closable="false"
+            title="本期不支持更换视频源文件；如需换源请重新投稿。被驳回或已下架的稿件保存后会重新进入待审。"
+        />
+      </el-form>
+      <template #footer>
+        <el-button @click="editVisible = false">取消</el-button>
+        <el-button type="primary" :loading="submitting" @click="submitEdit">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -146,5 +359,14 @@ onMounted(loadVideos)
 }
 .tip.ok {
   color: #67c23a;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.actions :deep(.el-button + .el-button) {
+  margin-left: 0;
 }
 </style>

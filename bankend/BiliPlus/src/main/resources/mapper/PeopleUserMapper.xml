@@ -39,6 +39,34 @@
     </update>
 
 
+    <update id="updateVideoInfo">
+        UPDATE video
+        <set>
+            <if test="title != null">
+                title = #{title},
+            </if>
+            <if test="description != null">
+                description = #{description},
+            </if>
+            <if test="categoryId != null">
+                category_id = #{categoryId},
+            </if>
+            <if test="coverUrl != null">
+                cover_url = #{coverUrl},
+            </if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id} AND user_id = #{userId}
+    </update>
+
+    <!-- status 与 reject_reason 一起改，重提时把历史驳回原因清空 -->
+    <update id="updateVideoStatus">
+        UPDATE video
+        SET status = #{status}, reject_reason = #{rejectReason}, update_time = NOW()
+        WHERE id = #{videoId} AND user_id = #{userId}
+    </update>
+
+
     <select id="countByEmail" resultType="java.lang.Integer">
         SELECT COUNT(1) FROM User WHERE email = #{email}
     </select>

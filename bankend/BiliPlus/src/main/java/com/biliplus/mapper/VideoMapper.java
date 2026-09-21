@@ -2,6 +2,7 @@ package com.biliplus.mapper;
 
 import com.biliplus.pojo.dto.userdto.VideoPageQueryDTO;
 import com.biliplus.pojo.entity.Video;
+import com.biliplus.pojo.vo.GetListVideoVO;
 import com.github.pagehelper.Page;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -15,8 +16,8 @@ public interface VideoMapper {
     @Select("select * from video where id = #{videoId} and status = 1")
     Video getVideo(Long videoId);
 
-    @Select("select * from video where status = 1 order by rand()")
-    Page<Video> recommend();
+    /** 带作者昵称/头像的推荐列表（见 VideoMapper.xml） */
+    Page<GetListVideoVO> recommend();
 
     @Update("update video set like_count = like_count + #{delta} where id = #{videoId}")
     int changeLikeCount(@Param("videoId") Long videoId, @Param("delta") int delta);
@@ -34,4 +35,11 @@ public interface VideoMapper {
 
     @Update("update video set view_count = view_count + 1 where id = #{videoId}")
     int increaseViewCount(@Param("videoId") Long videoId);
+
+    /** 仅统计已通过（status=1）的稿件，避免给未审核视频刷分享数 */
+    @Update("update video set share_count = share_count + 1 where id = #{videoId} and status = 1")
+    int increaseShareCount(@Param("videoId") Long videoId);
+
+    @Select("select share_count from video where id = #{videoId}")
+    Integer selectShareCount(@Param("videoId") Long videoId);
 }

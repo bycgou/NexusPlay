@@ -1,14 +1,17 @@
 server:
   address: 0.0.0.0
-  port: 8081
+  port: ${SERVER_PORT:8081}
 app:
-  external-url: http://localhost:8081
+  external-url: ${EXTERNAL_URL:http://localhost:8081}
+  # 跨域允许来源，逗号分隔。生产环境必须通过 CORS_ALLOWED_ORIGINS 覆盖为真实域名
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174}
 spring:
   application:
     name: BiliPlus
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/biliplus?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:biliplus}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:123456}
   # 邮件相关设置
@@ -38,8 +41,8 @@ spring:
   data:
     redis:
       database: 0
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
       jedis:
         pool:
           max-active: 20
@@ -58,13 +61,6 @@ spring:
 #      mapping:
 #        /video-files/**: file:${video.upload.base-path}  # 视频访问路径：/video-files/xxx.mp4
 #        /images/**: file:${image.upload.local-path}      # 图片访问路径：/images/xxx.jpg
-  # 跨域配置（允许前端5173端口访问所有路径）
-  cors:
-    allowed-origins: http://localhost:5173  # 你的Vite前端地址
-    allowed-methods: "*"  # 允许所有请求方法（GET/POST等）
-    allowed-headers: "*"  # 允许所有请求头
-    allow-credentials: true  # 允许携带Cookie（可选，视频播放一般不需要）
-    max-age: 3600  # 预检请求缓存1小时
 
 mybatis:
   mapper-locations: classpath*:mapper/*.xml
@@ -82,15 +78,33 @@ biliplus:
     people-ttl: 86400000
     people-token-name: peopleToken
 
-# 视频上传配置（保持原有路径，新增访问前缀说明）
+# 视频上传配置（路径按部署环境注入，默认值仅用于本地开发）
 video:
   upload:
-    base-path: D:/MyOSS/biliPlus/video-website/Videos/  # 视频实际存储路径
-    temp-path: D:/MyOSS/biliPlus/video-website/temp/    # 分片临时存储路径
+    base-path: ${VIDEO_UPLOAD_PATH:D:/MyOSS/biliPlus/video-website/Videos/}  # 视频实际存储路径
+    temp-path: ${VIDEO_TEMP_PATH:D:/MyOSS/biliPlus/video-website/temp/}      # 分片临时存储路径
     access-prefix: /video-files/  # 视频访问前缀（与静态资源mapping一致）
 
-# 图片上传配置（保持原有）
+# 图片上传配置
 image:
   upload:
-    base-path: D:/MyOSS/biliPlus/video-website/Images/
+    base-path: ${IMAGE_UPLOAD_PATH:D:/MyOSS/biliPlus/video-website/Images/}
     access-prefix: /images/
+
+# 直播配置（SRS）
+live:
+  srs:
+    rtmp-host: ${SRS_RTMP_HOST:localhost}
+    rtmp-port: ${SRS_RTMP_PORT:1935}
+    http-flv-base: ${SRS_FLV_BASE:http://localhost:8080/live}
+    # 无 RTC 环境时保持 false，连麦会返回 rtcAvailable=false 并给出降级提示
+    rtc-enabled: ${SRS_RTC_ENABLED:false}
+  pk:
+    default-duration-sec: ${LIVE_PK_DURATION_SEC:300}
+  gift:
+    max-count-per-request: 100
+  # 直播回放：无录制环境保持 enabled=false，下播时不写回放记录
+  replay:
+    enabled: ${LIVE_REPLAY_ENABLED:false}
+    # 录制文件点播地址模板，{streamKey} 会被替换为下播时的流密钥
+    play-url-template: ${LIVE_REPLAY_URL_TEMPLATE:}

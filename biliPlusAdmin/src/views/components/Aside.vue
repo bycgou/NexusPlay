@@ -19,6 +19,10 @@
         <el-icon><VideoPlay /></el-icon>
         <span>视频审核</span>
       </el-menu-item>
+      <el-menu-item index="/Home/Report" class="menu-item">
+        <el-icon><Warning /></el-icon>
+        <span>举报处理</span>
+      </el-menu-item>
       <el-menu-item index="/Home/Banner" class="menu-item">
         <el-icon><Picture /></el-icon>
         <span>轮播图管理</span>
@@ -27,6 +31,30 @@
         <el-icon><Grid /></el-icon>
         <span>分类管理</span>
       </el-menu-item>
+      <el-menu-item index="/Home/Live" class="menu-item">
+        <el-icon><VideoCamera /></el-icon>
+        <span>直播管理</span>
+      </el-menu-item>
+      <el-menu-item index="/Home/LiveCategory" class="menu-item">
+        <el-icon><Menu /></el-icon>
+        <span>直播分区</span>
+      </el-menu-item>
+      <el-menu-item index="/Home/Gift" class="menu-item">
+        <el-icon><Present /></el-icon>
+        <span>礼物管理</span>
+      </el-menu-item>
+      <el-menu-item index="/Home/GiftRecord" class="menu-item">
+        <el-icon><List /></el-icon>
+        <span>打赏流水</span>
+      </el-menu-item>
+      <el-menu-item index="/Home/WalletTx" class="menu-item">
+        <el-icon><Wallet /></el-icon>
+        <span>钱包账变</span>
+      </el-menu-item>
+      <el-menu-item index="/Home/Notification" class="menu-item">
+        <el-icon><Bell /></el-icon>
+        <span>系统通知</span>
+      </el-menu-item>
     </el-menu>
   </div>
 </template>
@@ -34,14 +62,21 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { VideoPlay, Grid, Picture } from '@element-plus/icons-vue'
+import { VideoPlay, Grid, Picture, VideoCamera, Present, List, Menu, Warning, Wallet, Bell } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const activeMenu = computed(() => {
   const path = route.path
   if (path.startsWith('/Home/VideoShenHe')) return '/Home/VideoShenHe'
+  if (path.startsWith('/Home/Report')) return '/Home/Report'
   if (path.startsWith('/Home/Banner')) return '/Home/Banner'
   if (path.startsWith('/Home/Category')) return '/Home/Category'
+  if (path.startsWith('/Home/LiveCategory')) return '/Home/LiveCategory'
+  if (path.startsWith('/Home/Live')) return '/Home/Live'
+  if (path.startsWith('/Home/GiftRecord')) return '/Home/GiftRecord'
+  if (path.startsWith('/Home/WalletTx')) return '/Home/WalletTx'
+  if (path.startsWith('/Home/Notification')) return '/Home/Notification'
+  if (path.startsWith('/Home/Gift')) return '/Home/Gift'
   return path
 })
 </script>

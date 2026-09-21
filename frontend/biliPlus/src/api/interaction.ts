@@ -8,11 +8,12 @@ export const toggleLike = (videoId: number) => {
     })
 }
 
-// 收藏/取消收藏
-export const toggleFavorite = (videoId: number) => {
+// 收藏/取消收藏；传入 folderId 时收藏到指定收藏夹，缺省进默认收藏夹
+export const toggleFavorite = (videoId: number, folderId?: number) => {
     return request({
         url: `/pp/interaction/favorite/${videoId}`,
-        method: 'post'
+        method: 'post',
+        data: folderId ? { folderId } : {}
     })
 }
 
@@ -37,5 +38,23 @@ export const getUserInteractionStatus = (userId: number) => {
     return request({
         url: `/pp/interaction/user/${userId}`,
         method: 'get'
+    })
+}
+
+// 我的点赞视频列表
+export const getMyLikedVideos = (page = 1, pageSize = 20) => {
+    return request({
+        url: '/pp/interaction/my/liked',
+        method: 'get',
+        params: { page, pageSize }
+    })
+}
+
+// 我的收藏视频列表
+export const getMyFavoriteVideos = (page = 1, pageSize = 20) => {
+    return request({
+        url: '/pp/interaction/my/favorite',
+        method: 'get',
+        params: { page, pageSize }
     })
 }

@@ -4,6 +4,13 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "types": ["vite/client"],
 
+    /* 路径别名必须声明在实际编译 src 的这个 project 里：
+       根 tsconfig 只做 references，其 compilerOptions 不会被被引用项目继承 */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,

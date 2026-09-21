@@ -22,4 +22,28 @@
         order by v.create_time desc
     </select>
 
+    <select id="recommend" resultType="com.biliplus.pojo.vo.GetListVideoVO">
+        select v.id,
+               v.title,
+               v.description,
+               v.cover_url,
+               v.video_url,
+               v.duration,
+               v.user_id,
+               v.category_id,
+               v.status,
+               v.view_count,
+               v.like_count,
+               v.comment_count,
+               v.share_count,
+               v.create_time,
+               v.update_time,
+               u.nickname,
+               u.avatar
+        from video v
+        left join user u on v.user_id = u.id
+        where v.status = 1
+        order by rand()
+    </select>
+
 </mapper>

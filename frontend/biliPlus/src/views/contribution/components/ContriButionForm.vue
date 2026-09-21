@@ -25,14 +25,14 @@
           v-model="localForm.category"
           placeholder="请选择分类"
           class="category-select"
+          :loading="categoriesLoading"
       >
-        <el-option label="音乐" value="music" />
-        <el-option label="舞蹈" value="dance" />
-        <el-option label="游戏" value="game" />
-        <el-option label="科技" value="tech" />
-        <el-option label="生活" value="life" />
-        <el-option label="美食" value="food" />
-        <el-option label="旅行" value="travel" />
+        <el-option
+            v-for="item in categories"
+            :key="item.id"
+            :label="item.name"
+            :value="item.id"
+        />
       </el-select>
     </el-form-item>
 
@@ -65,19 +65,25 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, computed } from 'vue';
 import TagEditor from './TagEditor.vue';
 
 const props = defineProps({
   modelValue: Object,
   rules: Object,
   recommendTags: Array,
-  isUploading: Boolean
+  isUploading: Boolean,
+  /** 后台视频分区列表 */
+  categories: {
+    type: Array,
+    default: () => []
+  },
+  categoriesLoading: Boolean
 });
 
 const emit = defineEmits(['update:modelValue']);
 
-// ✅ 关键修复：使用 computed 实现真正的双向绑定
+// 使用 computed 实现双向绑定
 const localForm = computed({
   get() {
     return props.modelValue;
@@ -86,7 +92,6 @@ const localForm = computed({
     emit('update:modelValue', value);
   }
 });
-
 
 // 暴露 validate 方法给父组件
 const formRef = ref();

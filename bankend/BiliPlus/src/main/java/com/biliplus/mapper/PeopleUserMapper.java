@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +45,33 @@ public interface PeopleUserMapper {
             "ORDER BY id DESC")
     List<User> searchByKeyword(@Param("keyword") String keyword);
 
-    @Select("select * from video where user_id = #{userId} order by create_time desc")
+    @Select("select * from video where user_id = #{userId} and status <> -1 order by create_time desc")
     List<Video> selectVideosByUserId(@Param("userId") Long userId);
+
+    @Select("select * from video where id = #{videoId}")
+    Video selectVideoById(@Param("videoId") Long videoId);
+
+    /** 只允许作者改自己的稿件（where 带 user_id），返回 0 表示越权或不存在 */
+    int updateVideoInfo(@Param("id") Long id,
+                        @Param("userId") Long userId,
+                        @Param("title") String title,
+                        @Param("description") String description,
+                        @Param("categoryId") Integer categoryId,
+                        @Param("coverUrl") String coverUrl);
+
+    int updateVideoStatus(@Param("videoId") Long videoId,
+                          @Param("userId") Long userId,
+                          @Param("status") Integer status,
+                          @Param("rejectReason") String rejectReason);
+
+    /** 0-禁用 1-正常（直播违规封禁/解封） */
+    @Update("UPDATE user SET status = #{status} WHERE id = #{userId}")
+    int updateUserStatus(@Param("userId") Long userId, @Param("status") Integer status);
+
+    /** 全站广播系统通知时的收件人集合 */
+    @Select("SELECT id FROM user WHERE status = 1")
+    List<Long> selectAllActiveUserIds();
+
+    @Update("UPDATE user SET password = #{password}, update_time = NOW() WHERE id = #{userId}")
+    int updatePassword(@Param("userId") Long userId, @Param("password") String password);
 }

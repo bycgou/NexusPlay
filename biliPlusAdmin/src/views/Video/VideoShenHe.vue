@@ -18,6 +18,8 @@ const page = ref(1)
 const pageSize = ref(10)
 // 0待审 1正常 2下架 3不通过；null=全部
 const status = ref<number | null>(0)
+/** el-radio-button 的 value 不接受 null，用哨兵值表示「全部」 */
+const ALL_STATUS = 'all'
 
 // 拒绝弹窗
 const rejectVisible = ref(false)
@@ -56,8 +58,9 @@ const loadList = async () => {
   }
 }
 
-const handleStatusChange = (val: number | null) => {
-  status.value = val
+const handleStatusChange = (val: string | number | boolean | undefined | null) => {
+  // el-radio-button 不接受 null，用 ALL_STATUS 哨兵表示「全部」
+  status.value = val === ALL_STATUS || val === undefined || val === null ? null : Number(val)
   page.value = 1
   loadList()
 }
@@ -128,12 +131,12 @@ onMounted(loadList)
 <template>
   <div class="page">
     <div class="toolbar">
-      <el-radio-group :model-value="status" @update:model-value="handleStatusChange">
+      <el-radio-group :model-value="status ?? ALL_STATUS" @update:model-value="handleStatusChange">
         <el-radio-button :value="0">待审核</el-radio-button>
         <el-radio-button :value="1">已过审</el-radio-button>
         <el-radio-button :value="3">不通过</el-radio-button>
         <el-radio-button :value="2">已下架</el-radio-button>
-        <el-radio-button :value="null">全部</el-radio-button>
+        <el-radio-button :value="ALL_STATUS">全部</el-radio-button>
       </el-radio-group>
       <el-button type="primary" @click="loadList">刷新</el-button>
     </div>

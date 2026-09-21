@@ -132,7 +132,8 @@ const resetProfileForm = () => {
 
 <template>
   <div class="settings-panel">
-    <h3 class="pannel-title">个人资料修改</h3>
+    <h3 class="panel-title">个人资料修改</h3>
+    <p class="panel-desc">更新头像、昵称与个性签名</p>
     <el-form :model="profileForm" label-width="100px" class="profile-form">
 <!--      头像上传-->
       <el-form-item>
@@ -144,7 +145,7 @@ const resetProfileForm = () => {
             accept="image/jpeg,image/png"
             @change="handleAvatarUpload"
             >
-          <el-avatar :src="profileForm.avatar || defaultAvatar" class="avatar-preview">
+          <el-avatar :size="80" :src="profileForm.avatar || defaultAvatar" class="avatar-preview">
             <div v-if="!profileForm.avatar" class="avatar-add-mask">
               <el-icon><Plus /></el-icon>
             </div>
@@ -203,5 +204,14 @@ const resetProfileForm = () => {
 </template>
 
 <style scoped>
+@import './settings-common.css';
 
+.avatar-preview {
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.avatar-preview:hover {
+  opacity: 0.9;
+}
 </style>
