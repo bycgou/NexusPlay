@@ -6,10 +6,12 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.core.env.Environment;  // 关键：导入Spring的Environment
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 
 @MapperScan("com.biliplus.mapper")
 @SpringBootApplication
+@EnableScheduling  // PK 到期自动结束等定时任务
 public class BiliPlusApplication {
 
     // 注入Spring的Environment（而非MyBatis的）

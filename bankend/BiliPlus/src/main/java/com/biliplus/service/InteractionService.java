@@ -12,9 +12,10 @@ public interface InteractionService {
     Map<String, Object> toggleLike(Long videoId, Long userId);
 
     /**
-     * 收藏/取消收藏
+     * 收藏/取消收藏。
+     * folderId 为空时进默认收藏夹；取消收藏忽略 folderId。
      */
-    Map<String, Object> toggleFavorite(Long videoId, Long userId);
+    Map<String, Object> toggleFavorite(Long videoId, Long userId, Long folderId);
 
     /**
      * 关注/取消关注

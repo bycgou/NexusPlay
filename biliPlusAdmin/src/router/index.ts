@@ -55,13 +55,26 @@ const routes: RouteRecordRaw[] = [
                 name: 'GiftRecord',
                 component: () => import('@/views/Gift/GiftRecord.vue'),
                 meta: { title: '打赏流水' }
+            },
+            {
+                path: 'WalletTx',
+                name: 'WalletTx',
+                component: () => import('@/views/Wallet/WalletTx.vue'),
+                meta: { title: '钱包账变' }
+            },
+            {
+                path: 'Report',
+                name: 'ReportManage',
+                component: () => import('@/views/Report/ReportManage.vue'),
+                meta: { title: '举报处理' }
+            },
+            {
+                path: 'Notification',
+                name: 'NotificationSend',
+                component: () => import('@/views/Notification/NotificationSend.vue'),
+                meta: { title: '系统通知' }
             }
         ]
-    },
-    {
-        path: '/about',
-        name: 'About',
-        component: () => import('@/views/About.vue')
     },
     {
         path: '/',
@@ -80,7 +93,7 @@ const router = createRouter({
     routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
     const token = localStorage.getItem('token')
     const requiresAuth = to.path.startsWith('/Home')
 

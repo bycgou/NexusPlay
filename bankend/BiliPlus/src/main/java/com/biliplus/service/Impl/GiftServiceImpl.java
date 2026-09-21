@@ -1,14 +1,17 @@
 package com.biliplus.service.Impl;
 
+import com.biliplus.constant.WalletTx;
 import com.biliplus.exception.BusinessException;
 import com.biliplus.mapper.*;
 import com.biliplus.pojo.dto.GiftSendDTO;
 import com.biliplus.pojo.entity.*;
 import com.biliplus.pojo.vo.GiftSendResultVO;
+import com.biliplus.pojo.vo.RechargeOrderVO;
 import com.biliplus.properties.LiveProperties;
 import com.biliplus.result.PageResult;
 import com.biliplus.service.GiftService;
 import com.biliplus.service.LivePkService;
+import com.biliplus.service.WalletService;
 import com.biliplus.websocket.LiveWebSocketHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -47,6 +50,9 @@ public class GiftServiceImpl implements GiftService {
 
     @Autowired
     private LivePkService livePkService;
+
+    @Autowired
+    private WalletService walletService;
 
     @Autowired
     private LiveWebSocketHandler liveWebSocketHandler;
@@ -132,11 +138,9 @@ public class GiftServiceImpl implements GiftService {
     @Override
     @Transactional
     public UserWallet recharge(Long userId, long amount) {
-        if (amount <= 0 || amount > 1_000_000) {
-            throw new BusinessException("充值金额非法");
-        }
-        userWalletMapper.ensureWallet(userId);
-        userWalletMapper.recharge(userId, amount);
+        // 兼容旧接口：内部走「创建订单 + 模拟支付」，保证与充值订单同一条账变链路
+        RechargeOrderVO order = walletService.createRechargeOrder(userId, amount);
+        walletService.payRechargeOrder(userId, order.getOrderNo());
         return userWalletMapper.selectByUserId(userId);
     }
 
@@ -204,6 +208,20 @@ public class GiftServiceImpl implements GiftService {
         String senderName = sender == null ? ("用户" + senderId)
                 : (StringUtils.hasText(sender.getNickname()) ? sender.getNickname() : sender.getUsername());
 
+        // ===== 账变：送礼扣款与主播收入都必须留痕，否则管理端无法对账 =====
+        UserWallet wallet = userWalletMapper.selectByUserId(senderId);
+        long senderBalanceAfter = wallet == null || wallet.getBalance() == null ? 0L : wallet.getBalance();
+        walletService.insertTransaction(senderId, WalletTx.TYPE_GIFT, -total, senderBalanceAfter,
+                WalletTx.BIZ_GIFT, record.getId(),
+                "送出 " + gift.getName() + " x" + count);
+
+        HostIncome hostIncome = hostIncomeMapper.selectByUserId(room.getUserId());
+        long hostBalanceAfter = hostIncome == null || hostIncome.getTotalIncome() == null
+                ? 0L : hostIncome.getTotalIncome();
+        walletService.insertTransaction(room.getUserId(), WalletTx.TYPE_HOST_INCOME, total, hostBalanceAfter,
+                WalletTx.BIZ_HOST_INCOME, record.getId(),
+                "收到 " + senderName + " 的 " + gift.getName() + " x" + count);
+
         try {
             ObjectNode node = objectMapper.createObjectNode();
             node.put("type", "gift");
@@ -221,7 +239,6 @@ public class GiftServiceImpl implements GiftService {
             log.warn("广播 gift 失败", e);
         }
 
-        UserWallet wallet = userWalletMapper.selectByUserId(senderId);
         GiftSendResultVO result = new GiftSendResultVO();
         result.setRecordId(record.getId());
         result.setBalance(wallet == null ? null : wallet.getBalance());

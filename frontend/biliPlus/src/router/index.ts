@@ -108,18 +108,6 @@ const routers: RouteRecordRaw[] = [
         ]
     },
     {
-        path: '/test',
-        name: 'Test',
-        component: () => import('@/views/test/test.vue'),
-        meta: {title: '测试'}
-    },
-    {
-        path: '/testTwo',
-        name: 'TestTwo',
-        component: () => import('@/views/test/TestTwo.vue'),
-        meta: {title: '测试'}
-    },
-    {
         path: '/search',
         name: 'Search',
         component: () => import('@/views/search/SearchPage.vue'),
@@ -171,6 +159,18 @@ const routers: RouteRecordRaw[] = [
         name: 'LiveStart',
         component: () => import('@/views/live/LiveStart.vue'),
         meta: {requiresAuth: true, title: '开播'}
+    },
+    {
+        path: '/notifications',
+        name: 'NotificationCenter',
+        component: () => import('@/views/notify/NotificationPage.vue'),
+        meta: {requiresAuth: true, title: '通知中心'}
+    },
+    {
+        path: '/dynamic',
+        name: 'DynamicFeed',
+        component: () => import('@/views/dynamic/DynamicFeed.vue'),
+        meta: {title: '动态'}
     },
     {
         // 404

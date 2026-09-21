@@ -9,8 +9,7 @@ import com.biliplus.pojo.entity.UserWallet;
 import com.biliplus.pojo.vo.GiftSendResultVO;
 import com.biliplus.properties.LiveProperties;
 import com.biliplus.service.Impl.GiftServiceImpl;
-import com.biliplus.websocket.LiveWebSocketHandler;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.biliplus.websocket.LiveWebSocketHandler;import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -45,6 +44,9 @@ class GiftServiceImplTest {
 
     @Mock
     private LivePkService livePkService;
+
+    @Mock
+    private WalletService walletService;
 
     @Mock
     private LiveWebSocketHandler liveWebSocketHandler;
@@ -129,10 +131,16 @@ class GiftServiceImplTest {
         assertEquals(990, result.getBalance());
         verify(giftRecordMapper).insert(any());
         verify(hostIncomeMapper).addIncome(100L, 10L);
+        // 送礼必须在同一事务里写两笔账变：支出方与主播收入方
+        verify(walletService, times(2)).insertTransaction(anyLong(), anyInt(), anyLong(),
+                anyLong(), anyString(), any(), anyString());
     }
 
     @Test
     void recharge_whenAmountIllegal_shouldThrow() {
+        // 金额校验已下沉到充值订单链路，非法金额在创建订单时被拒
+        when(walletService.createRechargeOrder(eq(9L), anyLong()))
+                .thenThrow(new BusinessException("充值数量非法"));
         assertThrows(BusinessException.class, () -> giftService.recharge(9L, -1));
     }
 

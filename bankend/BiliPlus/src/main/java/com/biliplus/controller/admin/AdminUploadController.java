@@ -22,9 +22,6 @@ import java.util.UUID;
 @RequestMapping("/admin/upload")
 public class AdminUploadController {
 
-    @Value("${app.external-url}")
-    private String externalUrl;
-
     @Value("${image.upload.base-path}")
     private String imageBasepath;
 
@@ -62,7 +59,8 @@ public class AdminUploadController {
             Path filePath = uploadPath.resolve(filename);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            String fileUrl = externalUrl + imageAccessPrefix + filename;
+            // 存相对路径，理由与前台 UploadController 一致
+            String fileUrl = imageAccessPrefix + filename;
             log.info("管理端图片上传成功: {}", fileUrl);
             return Result.success(fileUrl);
         } catch (Exception e) {

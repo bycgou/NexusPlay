@@ -148,7 +148,7 @@ onMounted(loadDetail)
         <el-col :span="10">
           <el-card shadow="never" class="info-card">
             <div class="video-title">{{ videoInfo.title }}</div>
-            <el-descriptions column="1" border size="small">
+            <el-descriptions :column="1" border size="small">
               <el-descriptions-item label="视频ID">{{ videoInfo.id }}</el-descriptions-item>
               <el-descriptions-item label="投稿用户ID">{{ videoInfo.userId }}</el-descriptions-item>
               <el-descriptions-item label="分类ID">{{ videoInfo.categoryId }}</el-descriptions-item>

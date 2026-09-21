@@ -5,6 +5,7 @@ import com.biliplus.result.PageResult;
 import com.biliplus.result.Result;
 import com.biliplus.service.GiftService;
 import com.biliplus.service.LiveRoomService;
+import com.biliplus.service.WalletService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,9 @@ public class AdminLiveController {
 
     @Autowired
     private GiftService giftService;
+
+    @Autowired
+    private WalletService walletService;
 
     @GetMapping("/rooms")
     public Result<PageResult> rooms(@RequestParam(required = false) Integer status,
@@ -78,5 +82,17 @@ public class AdminLiveController {
                                           @RequestParam(defaultValue = "1") Integer page,
                                           @RequestParam(defaultValue = "20") Integer size) {
         return Result.success(giftService.adminRecords(roomId, senderId, hostUserId, page, size));
+    }
+
+    /** 钱包账变对账查询：按用户/类型/业务类型/时间区间筛选 */
+    @GetMapping("/wallet/transactions")
+    public Result<PageResult> walletTransactions(@RequestParam(required = false) Long userId,
+                                                @RequestParam(required = false) Integer type,
+                                                @RequestParam(required = false) String bizType,
+                                                @RequestParam(required = false) String from,
+                                                @RequestParam(required = false) String to,
+                                                @RequestParam(defaultValue = "1") Integer page,
+                                                @RequestParam(defaultValue = "20") Integer size) {
+        return Result.success(walletService.adminTransactions(userId, type, bizType, from, to, page, size));
     }
 }

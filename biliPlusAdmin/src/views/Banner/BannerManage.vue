@@ -109,10 +109,6 @@ const handleDelete = async (row: Banner) => {
   }
 }
 
-const handleUploadSuccess = (url: string) => {
-  form.value.imageUrl = url
-}
-
 onMounted(loadList)
 </script>
 

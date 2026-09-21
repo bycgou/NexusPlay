@@ -12,9 +12,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -51,6 +53,10 @@ public class LivePkServiceImpl implements LivePkService {
         if (livePkMapper.selectActiveByRoom(myRoom.getId()) != null
                 || livePkMapper.selectActiveByRoom(opponentRoomId) != null) {
             throw new BusinessException("已有进行中的 PK");
+        }
+        // 同一对手已有待处理邀请时不再重复发起
+        if (livePkMapper.selectPendingInvite(opponentRoomId) != null) {
+            throw new BusinessException("已向该主播发起 PK 邀请，请等待对方响应");
         }
 
         LivePk pk = new LivePk();
@@ -191,6 +197,37 @@ public class LivePkServiceImpl implements LivePkService {
             doEnd(active);
         }
         livePkMapper.closeByRoom(roomId);
+    }
+
+    /**
+     * PK 到期自动结束。
+     * 主播侧倒计时只是展示，服务端必须兜底，否则主播断线会让房间一直停留在分屏状态。
+     */
+    @Scheduled(fixedDelay = 15_000L, initialDelay = 30_000L)
+    public void autoEndExpired() {
+        List<LivePk> actives;
+        try {
+            actives = livePkMapper.selectAllActive();
+        } catch (Exception e) {
+            log.warn("查询进行中 PK 失败", e);
+            return;
+        }
+        if (actives == null || actives.isEmpty()) {
+            return;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        for (LivePk pk : actives) {
+            if (pk.getStartTime() == null) {
+                continue;
+            }
+            int duration = pk.getDurationSec() == null
+                    ? liveProperties.getPk().getDefaultDurationSec()
+                    : pk.getDurationSec();
+            if (pk.getStartTime().plusSeconds(duration).isBefore(now)) {
+                log.info("PK {} 已到期，自动结束", pk.getId());
+                doEnd(pk);
+            }
+        }
     }
 
     private LivePk doEnd(LivePk pk) {

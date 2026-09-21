@@ -41,11 +41,23 @@
       <el-col :xs="24" :sm="24" :md="16" :lg="17">
         <!-- 弹幕播放器 -->
         <DanmakuPlayer
+            ref="playerRef"
             :src="currentVideo.videoUrl"
             :poster="currentVideo.coverUrl || 'https://via.placeholder.com/1280x720/e0e0e0?text=封面加载中'"
             :video-id="videoId"
             class="danmaku-player"
+            @ready="handlePlayerReady"
+            @timeupdate="handlePlayerTimeUpdate"
+            @ended="handlePlayerEnded"
         />
+
+        <!-- 已从上次位置续播的提示 -->
+        <div v-if="resumedFrom > 0" class="resume-tip">
+          已从上次播放位置 {{ formatDuration(resumedFrom) }} 继续播放
+          <el-button type="primary" link size="small" @click="restartFromBeginning">
+            从头播放
+          </el-button>
+        </div>
 
         <!-- 互动操作栏 -->
         <div class="footer-actions">
@@ -69,6 +81,10 @@
             <el-icon><Share /></el-icon>
             <span>{{ formatCount(shareCount) }}</span>
           </el-button>
+          <el-button type="text" class="report-btn" @click="openReport">
+            <el-icon><Warning /></el-icon>
+            <span>举报</span>
+          </el-button>
         </div>
 
         <!-- 评论区 -->
@@ -80,11 +96,60 @@
         <RecommendSidebar :videos="recommendVideos" @video-click="handleRecommendClick" />
       </el-col>
     </el-row>
+
+    <!-- 收藏夹选择 -->
+    <el-dialog v-model="folderPickerVisible" title="选择收藏夹" width="460px">
+      <div v-loading="folderLoading" class="folder-list">
+        <el-empty v-if="!folderLoading && !folders.length" description="还没有收藏夹" />
+        <div
+            v-for="f in folders"
+            :key="f.id"
+            class="folder-item"
+            @click="pickFolder(f.id)"
+        >
+          <div class="folder-name">
+            {{ f.name }}
+            <el-tag v-if="f.isDefault === 1" size="small" type="info">默认</el-tag>
+            <el-tag v-if="f.isPrivate === 1" size="small">私密</el-tag>
+          </div>
+          <span class="folder-count">{{ f.videoCount ?? 0 }} 个视频</span>
+        </div>
+      </div>
+      <div class="new-folder">
+        <el-input v-model="newFolderName" placeholder="新建收藏夹名称" maxlength="50" />
+        <el-button type="primary" :loading="creatingFolder" @click="createAndPickFolder">新建并收藏</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 举报视频 -->
+    <el-dialog v-model="reportVisible" title="举报该视频" width="520px">
+      <el-form label-width="70px">
+        <el-form-item label="原因">
+          <el-radio-group v-model="reportForm.reason">
+            <el-radio v-for="r in REPORT_REASONS" :key="r.value" :value="r.value">{{ r.label }}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="补充">
+          <el-input
+              v-model="reportForm.detail"
+              type="textarea"
+              :rows="3"
+              maxlength="500"
+              show-word-limit
+              placeholder="补充说明（选填）"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="reportVisible = false">取消</el-button>
+        <el-button type="primary" :loading="reportSubmitting" @click="submitReportAction">提交举报</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref,watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 
@@ -94,14 +159,25 @@ import CommentSection from '@/views/home/Main/Video/comment/CommentSection.vue'
 import RecommendSidebar from '@/views/home/Main/Video/components/RecommendSidebar.vue'
 
 // API
-import { getVideoDetail, getUserInfo, getRecommendVideos } from '@/api/video.js'
+import { getVideoDetail, getUserInfo, getRecommendVideos, shareVideo } from '@/api/video.js'
 import { toggleLike, toggleFavorite, toggleFollow, getVideoInteractionStatus, getUserInteractionStatus } from '@/api/interaction'
 import { useUserStore } from '@/store/user'
+import { usePlayerSettings } from '@/composables/usePlayerSettings'
+import {
+  clearVideoProgress,
+  hydrateProgressFromServer,
+  PROGRESS_FINISHED_TAIL_SEC,
+  readVideoProgress,
+  writeVideoProgress
+} from '@/composables/useVideoProgress'
+import { listFavoriteFolders, createFavoriteFolder } from '@/api/favoriteFolder'
+import { REPORT_REASONS, REPORT_TARGET, submitReport } from '@/api/report'
 
 // 路由
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const { settings: playerSettings } = usePlayerSettings()
 
 // 私信
 const goTomessage=()=>{
@@ -138,7 +214,9 @@ const currentVideo = ref({
     fansCount: 0
   }
 })
-const videoId = route.params.id
+const playerRef = ref(null)
+// 路由复用同一组件实例，videoId 必须跟随路由参数，否则换视频后弹幕/评论/进度会串到上一个视频
+const videoId = computed(() => route.params.id)
 
 
 const recommendVideos = ref([])
@@ -150,6 +228,9 @@ const collectCount = ref(0)
 const shareCount = ref(0)
 const likeAnimating = ref(false)
 const followAnimating = ref(false)
+// 本次播放从上次位置续播的起点（秒），0 表示从头
+const resumedFrom = ref(0)
+const lastProgressWrite = ref(0)
 
 // 格式化函数
 const formatCount = (num) => {
@@ -158,6 +239,13 @@ const formatCount = (num) => {
     return val % 1 === 0 ? `${val}万` : `${val.toFixed(1)}万`;
   }
   return num.toString();
+}
+
+const formatDuration = (seconds) => {
+  const total = Math.max(0, Math.floor(Number(seconds) || 0))
+  const m = Math.floor(total / 60)
+  const s = total % 60
+  return `${m}:${s.toString().padStart(2, '0')}`
 }
 
 const formatDate = (dateStr) => {
@@ -178,6 +266,8 @@ const loadVideoDetail = async () => {
   followed.value = false
   liked.value = false
   collected.value = false
+  resumedFrom.value = 0
+  lastProgressWrite.value = 0
   try {
     const videoRes = await getVideoDetail(currentId)
     if (videoRes.code !== 1 || !videoRes.data) throw new Error(videoRes.msg || '获取视频失败')
@@ -220,7 +310,9 @@ const loadVideoDetail = async () => {
     // 并行加载互动状态（互不影响）
     await Promise.all([
       loadVideoInteraction(currentId),
-      loadFollowStatus()
+      loadFollowStatus(),
+      // 登录后把服务端播放进度并入本地，使续播位置以账号为准
+      hydrateProgressFromServer(currentId)
     ])
     loadRecommendVideos(currentId)
   } catch (err) {
@@ -274,14 +366,13 @@ const loadFollowStatus = async () => {
 const loadRecommendVideos = async (id) => {
   try {
     const res = await getRecommendVideos(id)
-    console.log('获取推荐视频结果:', res)
-    if (res.code === 1) { // ✅
-      recommendVideos.value = res.data.records.map(item => ({ // ✅ res.data 就是 { records: [...] }
+    if (res.code === 1 && res.data?.records) {
+      recommendVideos.value = res.data.records.map(item => ({
         id: item.id,
         coverUrl: item.coverUrl || `https://picsum.photos/200/112?random=${item.id}`,
         title: item.title,
-        author: `用户${item.userId}`,
-        duration: item.duration || `${Math.floor(Math.random() * 30)}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`,
+        author: item.nickname || `用户${item.userId}`,
+        duration: item.duration || '',
         playCount: item.viewCount || 0,
         likeCount: item.likeCount || 0,
         tag: item.categoryId === 10 ? '原创' : '热门'
@@ -290,6 +381,56 @@ const loadRecommendVideos = async (id) => {
   } catch (err) {
     console.error('加载推荐视频失败:', err)
   }
+}
+
+// ===== 播放设置消费：续播 / 进度记忆 / 自动连播 =====
+
+/** 元数据就绪：按「记忆播放进度」续播，按「自动播放」起播 */
+const handlePlayerReady = ({ duration }) => {
+  const player = playerRef.value
+  if (!player) return
+
+  resumedFrom.value = 0
+  if (playerSettings.rememberProgress) {
+    const saved = readVideoProgress(videoId.value)
+    const total = Number(duration) || saved?.duration || 0
+    if (saved && saved.time > 3 && (!total || saved.time < total - PROGRESS_FINISHED_TAIL_SEC)) {
+      player.seek(saved.time)
+      resumedFrom.value = saved.time
+    }
+  }
+
+  if (playerSettings.autoplay) {
+    player.play()
+  }
+}
+
+/** 每 5 秒落一次进度，避免 timeupdate 高频写盘 */
+const handlePlayerTimeUpdate = ({ currentTime, duration }) => {
+  if (!playerSettings.rememberProgress) return
+  if (!duration || currentTime < 1) return
+  if (Math.abs(currentTime - lastProgressWrite.value) < 5) return
+  lastProgressWrite.value = currentTime
+  writeVideoProgress(videoId.value, currentTime, duration)
+  // P2 起在 useVideoProgress 内同步服务端播放历史
+}
+
+/** 播完：清理进度并按「连续播放」进入推荐下一条 */
+const handlePlayerEnded = () => {
+  clearVideoProgress(videoId.value)
+
+  if (!playerSettings.autoNext) return
+  const next = recommendVideos.value.find((item) => String(item.id) !== String(videoId.value))
+  if (!next) return
+  ElMessage.info('即将播放下一个视频')
+  router.push(`/video/${next.id}`)
+}
+
+const restartFromBeginning = () => {
+  clearVideoProgress(videoId.value)
+  resumedFrom.value = 0
+  lastProgressWrite.value = 0
+  playerRef.value?.seek(0)
 }
 // 事件处理
 const handleBackClick = () => {
@@ -307,7 +448,7 @@ const handleLike = async () => {
     return
   }
   try {
-    const res = await toggleLike(videoId)
+    const res = await toggleLike(videoId.value)
     if (res.code === 1 && res.data) {
       liked.value = res.data.liked
       likeCount.value = res.data.likeCount
@@ -334,21 +475,158 @@ const handleCollect = async () => {
     router.push('/login')
     return
   }
+  // 已收藏则直接取消；未收藏先让用户选收藏夹
+  if (collected.value) {
+    await doToggleFavorite()
+    return
+  }
+  await openFolderPicker()
+}
+
+const doToggleFavorite = async (folderId) => {
   try {
-    const res = await toggleFavorite(videoId)
+    const res = await toggleFavorite(videoId.value, folderId)
     if (res.code === 1 && res.data) {
       collected.value = res.data.collected
       collectCount.value = res.data.favoriteCount
       ElMessage.success(collected.value ? '收藏成功！' : '已取消收藏')
+    } else {
+      ElMessage.error(res.msg || '操作失败')
     }
   } catch (err) {
     console.error('收藏失败:', err)
-    ElMessage.error('操作失败')
   }
 }
 
-const handleShare = () => {
-  ElMessage.info('分享功能暂未实现')
+// ===== 收藏夹选择 =====
+
+const folderPickerVisible = ref(false)
+const folderLoading = ref(false)
+const folders = ref([])
+const newFolderName = ref('')
+const creatingFolder = ref(false)
+
+const openFolderPicker = async () => {
+  folderPickerVisible.value = true
+  folderLoading.value = true
+  try {
+    const res = await listFavoriteFolders()
+    folders.value = res.code === 1 ? (res.data || []) : []
+  } catch (e) {
+    console.error('加载收藏夹失败', e)
+  } finally {
+    folderLoading.value = false
+  }
+}
+
+const pickFolder = async (folderId) => {
+  folderPickerVisible.value = false
+  await doToggleFavorite(folderId)
+}
+
+const createAndPickFolder = async () => {
+  const name = newFolderName.value.trim()
+  if (!name) {
+    ElMessage.warning('请输入收藏夹名称')
+    return
+  }
+  creatingFolder.value = true
+  try {
+    const res = await createFavoriteFolder({ name })
+    if (res.code === 1 && res.data?.id) {
+      newFolderName.value = ''
+      await pickFolder(res.data.id)
+    } else {
+      ElMessage.error(res.msg || '新建收藏夹失败')
+    }
+  } catch (e) {
+    console.error('新建收藏夹失败', e)
+  } finally {
+    creatingFolder.value = false
+  }
+}
+
+// ===== 举报 =====
+
+const reportVisible = ref(false)
+const reportSubmitting = ref(false)
+const reportForm = ref({ reason: 1, detail: '' })
+
+const openReport = () => {
+  if (!userStore.userInfo?.id) {
+    ElMessage.warning('请先登录')
+    router.push('/login')
+    return
+  }
+  reportForm.value = { reason: 1, detail: '' }
+  reportVisible.value = true
+}
+
+const submitReportAction = async () => {
+  reportSubmitting.value = true
+  try {
+    const res = await submitReport({
+      targetType: REPORT_TARGET.VIDEO,
+      targetId: Number(videoId.value),
+      reason: reportForm.value.reason,
+      detail: reportForm.value.detail
+    })
+    if (res.code === 1) {
+      ElMessage.success('举报已提交，我们会尽快处理')
+      reportVisible.value = false
+    } else {
+      ElMessage.error(res.msg || '举报失败')
+    }
+  } catch (e) {
+    console.error('举报失败', e)
+  } finally {
+    reportSubmitting.value = false
+  }
+}
+
+const handleShare = async () => {
+  const url = `${window.location.origin}/video/${videoId.value}?from=share`
+  const title = currentVideo.value.title || 'NexusPlay 视频'
+
+  try {
+    // 移动端优先走系统分享面板
+    if (typeof navigator.share === 'function') {
+      await navigator.share({ title, url })
+    } else if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url)
+      ElMessage.success('链接已复制')
+    } else {
+      // 非安全上下文（http 且非 localhost）没有 clipboard API，退回 textarea 方案
+      const holder = document.createElement('textarea')
+      holder.value = url
+      holder.style.position = 'fixed'
+      holder.style.opacity = '0'
+      document.body.appendChild(holder)
+      holder.select()
+      const ok = document.execCommand('copy')
+      document.body.removeChild(holder)
+      if (!ok) throw new Error('copy failed')
+      ElMessage.success('链接已复制')
+    }
+  } catch (err) {
+    // 用户取消系统分享面板不算错误
+    if (err?.name === 'AbortError') return
+    console.warn('分享失败', err)
+    ElMessage.error('分享失败，请手动复制地址栏链接')
+    return
+  }
+
+  // 分享计数为可选增强，失败不影响分享本身
+  try {
+    const res = await shareVideo(videoId.value)
+    if (res?.code === 1 && res.data != null) {
+      shareCount.value = res.data
+    } else {
+      shareCount.value += 1
+    }
+  } catch {
+    shareCount.value += 1
+  }
 }
 
 const handleFollow = async () => {
@@ -483,6 +761,56 @@ onMounted(() => {
   box-shadow: var(--shadow-lg);
   background: #000;
   margin-bottom: var(--space-lg);
+}
+
+/* 续播提示 */
+.resume-tip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: calc(-1 * var(--space-md)) 0 var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  font-size: 13px;
+  color: var(--ink-secondary);
+  background: var(--brand-bg);
+  border-radius: var(--radius-md);
+}
+
+/* 收藏夹选择 */
+.folder-list {
+  max-height: 260px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+.folder-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.folder-item:hover {
+  background: var(--brand-bg);
+}
+.folder-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--ink);
+}
+.folder-count {
+  font-size: 12px;
+  color: var(--mist);
+}
+.new-folder {
+  display: flex;
+  gap: 8px;
+}
+.report-btn {
+  color: var(--mist);
 }
 
 /* 互动栏 */

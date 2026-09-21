@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -50,6 +51,17 @@ public class VideoController {
         PageResult pageResult = videoService.recommend();
         log.info("查询结果：{}", pageResult);
         return Result.success(pageResult);
+    }
+
+    // 4.分享计数（匿名可用，见 JwtTokenPeopleInterceptor 公开写路径规则）
+    @PostMapping("/{videoId}/share")
+    public Result<Long> share(@PathVariable Long videoId) {
+        log.info("视频分享计数：{}", videoId);
+        try {
+            return Result.success(videoService.share(videoId));
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
     }
 
 

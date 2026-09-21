@@ -1,19 +1,9 @@
 <script setup lang="ts">
-import { ElMessage } from 'element-plus'
 import { useLocalSettings } from '@/composables/useLocalSettings'
+import { PLAYER_SETTINGS_DEFAULTS } from '@/constants/playerSettings'
 
-const { settings, reset } = useLocalSettings('player', {
-  autoplay: false,
-  autoNext: true,
-  rememberProgress: true,
-  volume: 70,
-  playbackRate: 1,
-  danmakuEnabled: true,
-  danmakuOpacity: 80,
-  danmakuSpeed: 'normal' as 'slow' | 'normal' | 'fast',
-  danmakuArea: 'full' as 'top' | 'half' | 'full',
-  danmakuFontSize: 16
-})
+// defaults 与播放器共用同一常量，禁止在此处重新内联一份
+const { settings, reset } = useLocalSettings('player', PLAYER_SETTINGS_DEFAULTS)
 
 const handleReset = () => {
   reset()

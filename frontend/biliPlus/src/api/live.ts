@@ -88,3 +88,31 @@ export const getStreamStatus = (roomId: number) => {
         method: 'get'
     })
 }
+
+export interface LiveReplay {
+    id: number
+    liveRoomId: number
+    userId: number
+    title: string
+    coverUrl?: string
+    playUrl: string
+    durationSec?: number
+    createTime?: string
+}
+
+// 回放列表；userId 为空表示全站
+export const listLiveReplays = (params: { userId?: number; page?: number; size?: number } = {}) => {
+    return request({
+        url: '/pp/live/replays',
+        method: 'get',
+        params: { page: 1, size: 12, ...params }
+    })
+}
+
+// 回放详情
+export const getLiveReplay = (id: number) => {
+    return request({
+        url: `/pp/live/replays/${id}`,
+        method: 'get'
+    })
+}

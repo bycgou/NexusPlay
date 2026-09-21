@@ -1,5 +1,6 @@
 package com.biliplus.service.Impl;
 
+import com.biliplus.constant.Notify;
 import com.biliplus.exception.BusinessException;
 import com.biliplus.mapper.PeopleUserMapper;
 import com.biliplus.mapper.UserFollowMapper;
@@ -13,7 +14,9 @@ import com.biliplus.pojo.entity.VideoFavorite;
 import com.biliplus.pojo.entity.VideoLike;
 import com.biliplus.pojo.vo.GetListVideoVO;
 import com.biliplus.result.PageResult;
+import com.biliplus.service.FavoriteFolderService;
 import com.biliplus.service.InteractionService;
+import com.biliplus.service.NotificationService;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +52,21 @@ public class InteractionServiceImpl implements InteractionService {
     @Autowired
     private PeopleUserMapper peopleUserMapper;
 
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
+    private FavoriteFolderService favoriteFolderService;
+
+    private String resolveNickname(Long userId) {
+        User user = peopleUserMapper.getUserById(userId);
+        if (user == null) {
+            return "用户" + userId;
+        }
+        return org.springframework.util.StringUtils.hasText(user.getNickname())
+                ? user.getNickname() : user.getUsername();
+    }
+
     @Override
     @Transactional
     public Map<String, Object> toggleLike(Long videoId, Long userId) {
@@ -80,7 +98,7 @@ public class InteractionServiceImpl implements InteractionService {
 
     @Override
     @Transactional
-    public Map<String, Object> toggleFavorite(Long videoId, Long userId) {
+    public Map<String, Object> toggleFavorite(Long videoId, Long userId, Long folderId) {
         Map<String, Object> result = new HashMap<>();
         if (userId == null) {
             throw new BusinessException("请先登录");
@@ -92,13 +110,17 @@ public class InteractionServiceImpl implements InteractionService {
             result.put("collected", false);
             log.info("取消收藏: videoId={}, userId={}", videoId, userId);
         } else {
+            // 缺省进默认收藏夹；显式指定时校验归属
+            Long resolvedFolderId = favoriteFolderService.resolveFolderId(userId, folderId);
             VideoFavorite videoFavorite = new VideoFavorite();
             videoFavorite.setVideoId(videoId);
+            videoFavorite.setFolderId(resolvedFolderId);
             videoFavorite.setUserId(userId);
             videoFavorite.setCreateTime(LocalDateTime.now());
             videoFavoriteMapper.insert(videoFavorite);
             result.put("collected", true);
-            log.info("添加收藏: videoId={}, userId={}", videoId, userId);
+            result.put("folderId", resolvedFolderId);
+            log.info("添加收藏: videoId={}, userId={}, folderId={}", videoId, userId, resolvedFolderId);
         }
 
         result.put("favoriteCount", videoFavoriteMapper.countByVideoId(videoId));
@@ -131,6 +153,9 @@ public class InteractionServiceImpl implements InteractionService {
             userFollowMapper.insert(userFollow);
             result.put("followed", true);
             log.info("添加关注: userId={}, followUserId={}", followerId, followingId);
+            // 仅在关注时通知，取关不打扰
+            notificationService.notify(followingId, followerId, Notify.TYPE_FOLLOW,
+                    resolveNickname(followerId) + " 关注了你", null, null, null);
         }
 
         result.put("fansCount", userFollowMapper.countFans(followingId));

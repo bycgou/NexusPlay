@@ -22,6 +22,12 @@ class AdminVideoServiceImplTest {
     @Mock
     private AdminVideoMapper adminVideoMapper;
 
+    @Mock
+    private NotificationService notificationService;
+
+    @Mock
+    private DynamicService dynamicService;
+
     @InjectMocks
     private AdminVideoServiceImpl adminVideoService;
 

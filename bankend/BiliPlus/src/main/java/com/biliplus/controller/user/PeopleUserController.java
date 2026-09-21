@@ -244,13 +244,53 @@ public class PeopleUserController {
         }
     }
 
-    /** 我的投稿列表（含 status / rejectReason，供用户查看审核结果） */
+    /** 我的投稿列表（含 status / rejectReason / tags，供用户查看审核结果） */
     @GetMapping("/my/videos")
-    public Result<java.util.List<Video>> myVideos() {
+    public Result<java.util.List<com.biliplus.pojo.vo.MyVideoVO>> myVideos() {
         Long userId = com.biliplus.utils.UserContext.getCurrentUserId();
         log.info("查询我的投稿 userId={}", userId);
         try {
             return Result.success(peopleUserService.listMyVideos(userId));
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /** 编辑自有稿件（标题/简介/分类/封面/标签） */
+    @PutMapping("/my/videos/{id}")
+    public Result updateMyVideo(@PathVariable Long id,
+                                @RequestBody com.biliplus.pojo.dto.userdto.VideoEditDTO dto) {
+        Long userId = com.biliplus.utils.UserContext.getCurrentUserId();
+        log.info("编辑稿件 userId={}, videoId={}", userId, id);
+        try {
+            peopleUserService.updateMyVideo(userId, id, dto);
+            return Result.success();
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /** 删除（软删）自有稿件 */
+    @DeleteMapping("/my/videos/{id}")
+    public Result deleteMyVideo(@PathVariable Long id) {
+        Long userId = com.biliplus.utils.UserContext.getCurrentUserId();
+        log.info("删除稿件 userId={}, videoId={}", userId, id);
+        try {
+            peopleUserService.deleteMyVideo(userId, id);
+            return Result.success();
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /** 驳回/下架稿件修改后重新提交审核 */
+    @PostMapping("/my/videos/{id}/resubmit")
+    public Result resubmitMyVideo(@PathVariable Long id) {
+        Long userId = com.biliplus.utils.UserContext.getCurrentUserId();
+        log.info("重新提交稿件 userId={}, videoId={}", userId, id);
+        try {
+            peopleUserService.resubmitMyVideo(userId, id);
+            return Result.success();
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }

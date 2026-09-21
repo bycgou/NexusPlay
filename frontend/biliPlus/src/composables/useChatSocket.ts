@@ -1,6 +1,7 @@
 // src/composables/useChatSocket.js
 import { ref, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { wsChatUrl } from '@/utils/env'
 
 // 全局 socket 实例（确保整个应用只有一个连接）
 let globalSocket = null
@@ -29,7 +30,7 @@ export function useChatSocket() {
             globalSocket.close()
         }
 
-        const wsUrl = `ws://localhost:8081/ws/chat?token=${encodeURIComponent(token)}`
+        const wsUrl = `${wsChatUrl()}?token=${encodeURIComponent(token)}`
         globalSocket = new WebSocket(wsUrl)
         socket.value = globalSocket
 

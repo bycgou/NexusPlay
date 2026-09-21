@@ -40,4 +40,12 @@ export const getUserInfo = (userId) => {
     });
 }
 
+// 5. 分享计数（未登录也可调用，返回最新分享数）
+export const shareVideo = (videoId) => {
+    return request({
+        url: `/pp/videos/${videoId}/share`,
+        method: 'post'
+    });
+}
+
 export {request}

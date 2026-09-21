@@ -51,12 +51,15 @@
           </div>
         </el-tooltip>
 
-        <!-- 通知图标（暂无通知系统时不显示红点） -->
+        <!-- 通知：有未读显示红点 -->
         <el-tooltip content="通知" placement="bottom">
-          <div class="notification-badge" @click="handleNotificationClick">
+          <div class="notification-badge msg-badge" @click="handleNotificationClick">
             <el-icon size="20" class="action-icon">
               <Bell />
             </el-icon>
+            <span v-if="unreadNotifyCount > 0" class="dot-badge">
+              {{ unreadNotifyCount > 99 ? '99+' : unreadNotifyCount }}
+            </span>
           </div>
         </el-tooltip>
 
@@ -265,6 +268,7 @@ import {useUserStore} from "@/store/user.js";
 import {useRouter, useRoute} from "vue-router";
 import { useTheme } from '@/composables/useTheme';
 import { getUnreadTotal } from '@/api/chat'
+import { getNotificationUnreadCount } from '@/api/notify'
 
 const userStore = useUserStore();
 const route = useRoute();
@@ -300,10 +304,33 @@ const refreshUnread = async () => {
   }
 }
 
+// 未读通知数（铃铛红点；未登录不轮询、不显示）
+const unreadNotifyCount = ref(0)
+
+const refreshNotifyUnread = async () => {
+  if (!localStorage.getItem('token') && !userStore.userInfo?.id) {
+    unreadNotifyCount.value = 0
+    return
+  }
+  try {
+    const res = await getNotificationUnreadCount()
+    // 未登录时后端返回 0 而不是 401，可以安全轮询
+    if (res.code === 1) {
+      unreadNotifyCount.value = Number(res.data) || 0
+    }
+  } catch (e) {
+    // 静默失败，避免刷屏
+  }
+}
+
 const startUnreadPolling = () => {
   stopUnreadPolling()
   refreshUnread()
-  unreadTimer = setInterval(refreshUnread, 30000)
+  refreshNotifyUnread()
+  unreadTimer = setInterval(() => {
+    refreshUnread()
+    refreshNotifyUnread()
+  }, 30000)
 }
 
 const stopUnreadPolling = () => {
@@ -314,7 +341,7 @@ const stopUnreadPolling = () => {
 }
 
 const handleNotificationClick = () => {
-  ElMessage.info('通知功能开发中')
+  router.push('/notifications')
 }
 
 const goToMessage = () => {
@@ -629,6 +656,7 @@ watch(
     else {
       stopUnreadPolling()
       unreadMsgCount.value = 0
+      unreadNotifyCount.value = 0
     }
   }
 );

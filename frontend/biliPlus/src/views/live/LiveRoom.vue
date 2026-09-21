@@ -3,14 +3,14 @@ import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import flvjs from 'flv.js'
-import {
-  getLiveRoom, enterLiveRoom, leaveLiveRoom, stopLive,
-  getStreamStatus, type LiveRoom
-} from '@/api/live'
-import { listGifts, getWallet, rechargeWallet, sendGift, type Gift } from '@/api/gift'
-import { getActivePk, respondPk, leaveMic } from '@/api/pk'
+import { getLiveRoom, enterLiveRoom, leaveLiveRoom, stopLive, listLiveRooms,
+  getStreamStatus, type LiveRoom } from '@/api/live'
+import { listGifts, getWallet, createRechargeOrder, payRechargeOrder,
+  listWalletTransactions, sendGift, type Gift } from '@/api/gift'
+import { getActivePk, respondPk, leaveMic, invitePk, endPk } from '@/api/pk'
 import { useLiveSocket } from '@/composables/useLiveSocket'
 import GiftEffectLayer from '@/components/GiftEffectLayer.vue'
+import { SRS_FLV_BASE, SRS_FLV_PROXY_PREFIX } from '@/utils/env'
 
 const route = useRoute()
 const router = useRouter()
@@ -114,6 +114,10 @@ const mic = reactive({
   active: false,
   role: '' as '' | 'host' | 'guest',
   rtcRoom: '',
+  /** 后端是否配置了 RTC 媒体服务；false 时只走信令并明确提示不支持 */
+  rtcAvailable: false as boolean | null,
+  /** 是否已挂上远端媒体流（未挂上时展示文字状态而不是空白小窗） */
+  hasMedia: false,
   pending: [] as any[]
 })
 
@@ -141,11 +145,14 @@ const {
   connect, disconnect, chat, micApply, micAccept, micLeave: wsMicLeave
 } = useLiveSocket()
 
-/** 把后端 playUrl 改写成走 Vite 代理，避免浏览器直连 SRS 跨域 */
+/** 把后端 playUrl 改写成走前端代理，避免浏览器直连 SRS 跨域 */
 const toLocalPlayUrl = (url: string) => {
   if (!url) return ''
-  // http://localhost:8080/live/xxx.flv → /srs-live/xxx.flv
-  return url.replace(/^https?:\/\/[^/]+\/live\//, '/srs-live/')
+  // 后端 playUrl 与 VITE_SRS_FLV_BASE 同源时按配置替换，换 SRS 域名无需改代码
+  if (SRS_FLV_BASE && url.startsWith(SRS_FLV_BASE)) {
+    return SRS_FLV_PROXY_PREFIX + url.slice(SRS_FLV_BASE.length)
+  }
+  return url.replace(/^https?:\/\/[^/]+\/live\//, `${SRS_FLV_PROXY_PREFIX}/`)
 }
 
 const initPlayer = (rawUrl: string) => {
@@ -304,17 +311,67 @@ const giftFxClass = (g: any) => {
 }
 
 const doRecharge = async () => {
+  let value: string
   try {
-    const { value } = await ElMessageBox.prompt('充值金额（测试）', '充值', {
+    const r = await ElMessageBox.prompt('充值硬币数量（本期为模拟支付）', '充值', {
       inputValue: '1000',
       inputPattern: /^\d+$/,
       inputErrorMessage: '请输入正整数'
     })
-    const res: any = await rechargeWallet(Number(value))
-    walletBalance.value = res?.data?.balance ?? walletBalance.value
+    value = r.value
+  } catch {
+    return // 用户取消
+  }
+
+  const amount = Number(value)
+  try {
+    // 先下单再支付：与真实支付网关同一条链路，支付成功才写账变
+    const orderRes: any = await createRechargeOrder(amount)
+    if (orderRes?.code !== 1 || !orderRes.data?.orderNo) {
+      ElMessage.error(orderRes?.msg || '创建充值订单失败')
+      return
+    }
+    await ElMessageBox.confirm(
+      `应付金额 ¥${orderRes.data.payAmount}，确认支付？`,
+      '模拟支付',
+      { type: 'info', confirmButtonText: '确认支付', cancelButtonText: '取消' }
+    )
+    const payRes: any = await payRechargeOrder(orderRes.data.orderNo)
+    if (payRes?.code !== 1) {
+      ElMessage.error(payRes?.msg || '支付失败')
+      return
+    }
+    const w: any = await getWallet()
+    walletBalance.value = w?.data?.balance ?? walletBalance.value
     ElMessage.success('充值成功')
   } catch {
-    /* cancel */
+    /* 取消支付 */
+  }
+}
+
+// ===== 我的账变明细 =====
+
+const txVisible = ref(false)
+const txLoading = ref(false)
+const txList = ref<any[]>([])
+
+const TX_TYPE_TEXT: Record<number, string> = {
+  1: '充值',
+  2: '送礼支出',
+  3: '主播收入',
+  4: '系统调整'
+}
+
+const openTransactions = async () => {
+  txVisible.value = true
+  txLoading.value = true
+  try {
+    const res: any = await listWalletTransactions({ size: 30 })
+    txList.value = res?.data?.records || []
+  } catch (e) {
+    console.error('加载账变明细失败', e)
+  } finally {
+    txLoading.value = false
   }
 }
 
@@ -422,6 +479,61 @@ const leaveMicAction = async () => {
   wsMicLeave(roomId)
   try { await leaveMic(roomId) } catch { /* ignore */ }
   mic.active = false
+  mic.hasMedia = false
+}
+
+// ===== 主播发起 PK =====
+
+const pkPickerVisible = ref(false)
+const pkOpponents = ref<any[]>([])
+const pkPicking = ref(false)
+const pkInviting = ref(false)
+
+const openPkPicker = async () => {
+  pkPickerVisible.value = true
+  pkPicking.value = true
+  try {
+    const res: any = await listLiveRooms(1, 50)
+    const records = res?.data?.records || []
+    // 排除自己房间，也不能和已在 PK 中的房间发起
+    pkOpponents.value = records.filter((r: any) => Number(r.id) !== Number(roomId))
+    if (!pkOpponents.value.length) {
+      ElMessage.info('当前没有其他正在直播的房间')
+    }
+  } catch (e) {
+    console.error('加载对手房间失败', e)
+  } finally {
+    pkPicking.value = false
+  }
+}
+
+const confirmInvitePk = async (opponentRoomId: number) => {
+  pkInviting.value = true
+  try {
+    const res: any = await invitePk(opponentRoomId)
+    if (res?.code === 1) {
+      ElMessage.success('PK 邀请已发出，等待对方同意')
+      pkPickerVisible.value = false
+    } else {
+      ElMessage.error(res?.msg || '发起 PK 失败')
+    }
+  } catch (e) {
+    console.error('发起 PK 失败', e)
+  } finally {
+    pkInviting.value = false
+  }
+}
+
+const endPkAction = async () => {
+  if (!pk.pkId) return
+  try {
+    await ElMessageBox.confirm('确认结束本次 PK？', 'PK', { type: 'warning' })
+  } catch { return }
+  try {
+    await endPk(pk.pkId)
+  } catch (e) {
+    console.error('结束 PK 失败', e)
+  }
 }
 
 const handleStopLive = async () => {
@@ -516,13 +628,24 @@ const connectWs = () => {
       if (isHost.value) mic.pending.push(m)
     },
     onMicReady: (m) => {
-      mic.active = true
-      mic.role = m.role
-      mic.rtcRoom = m.rtcRoom
-      ElMessage.success(m.role === 'host' ? '连麦已开始' : '已上麦')
+      mic.role = m.role || ''
+      mic.rtcRoom = m.rtcRoom || ''
+      mic.rtcAvailable = m.rtcAvailable === true
+      mic.hasMedia = false
+
+      if (mic.rtcAvailable) {
+        // 信令与 token 已就绪；真正的音视频挂流需要 RTC 可用的 SRS
+        mic.active = true
+        ElMessage.success(m.role === 'host' ? '连麦已开始' : '已上麦')
+      } else {
+        // 未配置 RTC：不展示空白小窗，给出明确的降级提示
+        mic.active = false
+        ElMessage.warning('当前环境暂不支持连麦（未配置 RTC 媒体服务），已跳过音视频接入')
+      }
     },
     onMicEnd: () => {
       mic.active = false
+      mic.hasMedia = false
       ElMessage.info('连麦已结束')
     },
     onRoomClose: () => {
@@ -634,7 +757,8 @@ onUnmounted(() => {
           <div class="opp-label">{{ pk.opponentName }}</div>
         </div>
         <div v-if="mic.active" class="mic-window">
-          <video ref="guestVideoEl" muted playsinline class="player"></video>
+          <video v-show="mic.hasMedia" ref="guestVideoEl" muted playsinline class="player"></video>
+          <div v-if="!mic.hasMedia" class="mic-waiting">连麦已建立，等待音视频接入…</div>
           <div class="mic-label">{{ mic.role === 'host' ? '连麦观众' : '主播' }}</div>
         </div>
       </div>
@@ -662,6 +786,7 @@ onUnmounted(() => {
         <div class="wallet">
           余额：<b>{{ walletBalance }}</b>
           <el-button size="small" text type="primary" @click="doRecharge">充值</el-button>
+          <el-button size="small" text @click="openTransactions">明细</el-button>
         </div>
         <div class="gift-panel">
           <div class="gift-tabs">
@@ -704,6 +829,16 @@ onUnmounted(() => {
           <el-button size="small" @click="checkStream">检测推流</el-button>
           <el-button size="small" @click="retryPlay">刷新画面</el-button>
           <el-button size="small" @click="goStudio">主播台设置</el-button>
+          <el-button
+              v-if="!pk.active"
+              size="small"
+              type="primary"
+              :disabled="!room?.id || room?.status !== 1"
+              @click="openPkPicker"
+          >
+            发起 PK
+          </el-button>
+          <el-button v-else size="small" type="warning" @click="endPkAction">结束 PK</el-button>
           <el-button size="small" type="danger" @click="handleStopLive">下播</el-button>
         </div>
       </template>
@@ -716,6 +851,48 @@ onUnmounted(() => {
         <el-button size="small" @click="acceptMic(m.userId, false)">拒绝</el-button>
       </div>
     </div>
+
+    <!-- 发起 PK：选一个正在直播的对手房间 -->
+    <el-dialog v-model="pkPickerVisible" title="选择 PK 对手" width="560px">
+      <div v-loading="pkPicking" class="pk-picker">
+        <el-empty v-if="!pkPicking && !pkOpponents.length" description="当前没有其他正在直播的房间" />
+        <div v-for="o in pkOpponents" :key="o.id" class="pk-candidate">
+          <img v-if="o.coverUrl" :src="o.coverUrl" class="pk-cover" alt="" />
+          <div class="pk-info">
+            <div class="pk-title">{{ o.title }}</div>
+            <div class="pk-host">{{ o.hostNickname || ('主播' + o.userId) }}</div>
+          </div>
+          <el-button size="small" type="primary" :loading="pkInviting" @click="confirmInvitePk(o.id)">
+            邀请 PK
+          </el-button>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="pkPickerVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 我的账变明细 -->
+    <el-dialog v-model="txVisible" title="我的账变明细" width="620px">
+      <el-table v-loading="txLoading" :data="txList" size="small" empty-text="暂无账变记录">
+        <el-table-column prop="createTime" label="时间" width="170" />
+        <el-table-column label="类型" width="90">
+          <template #default="{ row }">{{ TX_TYPE_TEXT[row.type] || row.type }}</template>
+        </el-table-column>
+        <el-table-column label="变动" width="100">
+          <template #default="{ row }">
+            <span :class="row.amount >= 0 ? 'tx-in' : 'tx-out'">
+              {{ row.amount >= 0 ? '+' : '' }}{{ row.amount }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="balanceAfter" label="余额" width="90" />
+        <el-table-column prop="remark" label="备注" show-overflow-tooltip />
+      </el-table>
+      <template #footer>
+        <el-button @click="txVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 礼物特效层（15 款差异化动画） -->
     <GiftEffectLayer :gift="giftFx" />
@@ -782,6 +959,49 @@ onUnmounted(() => {
   aspect-ratio: 16/9;
   background: #111;
 }
+.mic-waiting {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #bbb;
+  font-size: 13px;
+  text-align: center;
+  padding: 0 12px;
+}
+
+/* 账变明细 */
+.tx-in { color: #67c23a; }
+.tx-out { color: #f56c6c; }
+
+/* 发起 PK：对手选择 */
+.pk-picker { min-height: 80px; }
+.pk-candidate {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.pk-candidate:last-child { border-bottom: none; }
+.pk-cover {
+  width: 76px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+  background: #f5f7fa;
+}
+.pk-info { flex: 1; min-width: 0; }
+.pk-title {
+  font-size: 14px;
+  color: #303133;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pk-host { font-size: 12px; color: #909399; }
 .player {
   width: 100%;
   height: 100%;
@@ -896,10 +1116,15 @@ onUnmounted(() => {
 }
 .gift-item {
   display: flex; flex-direction: column; align-items: center;
-  gap: 2px; padding: 6px 8px; border-radius: 8px;
-  border: 1px solid transparent; cursor: pointer; min-width: 64px;
+  gap: 2px; padding: 6px 8px; border-radius: 10px;
+  border: 1px solid transparent; cursor: pointer; min-width: 68px;
   flex-shrink: 0;
   background: rgba(0,0,0,0.02);
+  transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+}
+.gift-item:hover {
+  transform: translateY(-2px);
+  background: rgba(0,0,0,0.05);
 }
 .gift-item.lv2 {
   background: linear-gradient(180deg, rgba(255,154,91,0.12), rgba(255,154,91,0.04));
@@ -915,7 +1140,7 @@ onUnmounted(() => {
 }
 .gift-item .gname { font-size: 12px; }
 .gift-item .gprice { font-size: 11px; color: #f5a623; }
-.gift-icon { width: 28px; height: 28px; object-fit: contain; }
+.gift-icon { width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)); }
 .gift-send-bar {
   display: flex;
   align-items: center;

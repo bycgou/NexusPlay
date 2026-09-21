@@ -4,6 +4,7 @@ import com.biliplus.exception.BusinessException;
 import com.biliplus.mapper.PeopleUserMapper;
 import com.biliplus.pojo.dto.userdto.VideoPageQueryDTO;
 import com.biliplus.pojo.entity.Video;
+import com.biliplus.pojo.vo.GetListVideoVO;
 import com.biliplus.result.PageResult;
 import com.biliplus.mapper.VideoMapper;
 import com.github.pagehelper.Page;
@@ -36,7 +37,7 @@ class VideoServiceImplTest {
 
     @Test
     void recommend_shouldReturnPageResult() {
-        Page<Video> page = new Page<>(1, 10);
+        Page<GetListVideoVO> page = new Page<>(1, 10);
         page.setTotal(0);
         when(videoMapper.recommend()).thenReturn(page);
         PageResult result = videoService.recommend();

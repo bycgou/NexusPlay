@@ -31,10 +31,6 @@ public class UploadController {
     @Value("${video.upload.access-prefix}")
     private String videoAccessPrefix;
 
-    // ✅ 新增：注入对外可访问的基础 URL（从 yml 读取）
-    @Value("${app.external-url}")
-    private String externalUrl;
-
     // 图片相关
     @Value("${image.upload.base-path}")
     private String imageBasepath;
@@ -148,8 +144,9 @@ public class UploadController {
 
         Files.deleteIfExists(Paths.get(tempDir)); // 删除临时目录（分片已删完）
 
-        // ✅ 关键修改：使用 externalUrl 拼接完整 URL
-        String fileUrl = externalUrl + videoAccessPrefix + newFileName;
+        // 存相对路径：局域网/多域名部署时由前端站点同源解析，再经 Vite/Nginx 转发到本服务，
+        // 避免把 localhost 之类的主机名写进库，导致换一个访问域名就全部失效
+        String fileUrl = videoAccessPrefix + newFileName;
 
         VideoUploadResultVO vo = new VideoUploadResultVO();
         vo.setFileUrl(fileUrl);
@@ -187,8 +184,8 @@ public class UploadController {
             Path filePath = uploadPath.resolve(filename);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            // ✅ 关键修改：使用 externalUrl 拼接图片 URL
-            String fileUrl = externalUrl + imageAccessPrefix + filename;
+            // 存相对路径，理由同 mergeChunks
+            String fileUrl = imageAccessPrefix + filename;
 
             log.info("图片上传成功,文件名:{},访问地址:{}", filename, fileUrl);
             return Result.success(fileUrl);

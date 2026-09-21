@@ -35,18 +35,25 @@ public class InteractionController {
     }
 
     /**
-     * 收藏/取消收藏
+     * 收藏/取消收藏。body 可选 {folderId}；缺省进默认收藏夹
      */
     @PostMapping("/favorite/{videoId}")
-    public Result<Map<String, Object>> toggleFavorite(@PathVariable Long videoId) {
+    public Result<Map<String, Object>> toggleFavorite(@PathVariable Long videoId,
+                                                      @RequestBody(required = false) Map<String, Object> body) {
         Long userId = UserContext.getCurrentUserId();
-        log.info("收藏操作: videoId={}, userId={}", videoId, userId);
+        Long folderId = null;
+        if (body != null && body.get("folderId") != null) {
+            Object raw = body.get("folderId");
+            folderId = raw instanceof Number ? ((Number) raw).longValue()
+                    : Long.parseLong(String.valueOf(raw));
+        }
+        log.info("收藏操作: videoId={}, userId={}, folderId={}", videoId, userId, folderId);
         try {
-            Map<String, Object> result = interactionService.toggleFavorite(videoId, userId);
+            Map<String, Object> result = interactionService.toggleFavorite(videoId, userId, folderId);
             return Result.success(result);
         } catch (Exception e) {
             log.error("收藏操作失败", e);
-            return Result.error("操作失败");
+            return Result.error(e.getMessage());
         }
     }
 

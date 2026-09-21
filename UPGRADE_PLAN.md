@@ -1245,4 +1245,102 @@ bankend/BiliPlus/sql/live_full.sql
 
 ---
 
-**文档结束。** 实现过程中若接口或表结构必须调整，请在对应章节追加「变更记录」小节，保持契约可追溯。
+**文档结束。**
+
+---
+
+## 附录 C — 变更记录（实现回写）
+
+> 本节记录实现过程中对本文档契约的偏离与补充，保持契约可追溯。
+
+### C.1 P0 播放设置：defaults 采用设置页口径
+
+§5.1「建议 defaults」给的是 DPlayer 原生语义值（`danmakuOpacity: 0.8`、`danmakuSpeed: 1`、`danmakuArea: 0.5`）。
+实现改为**冻结设置页已有口径**（`danmakuOpacity: 80`、`danmakuSpeed: 'slow'|'normal'|'fast'`、`danmakuArea: 'top'|'half'|'full'`）：
+
+- 设置页已经上线，用户 localStorage 里存的就是这套键；改键名会让老用户设置静默失效
+- 百分比与枚举对用户更直观，`danmakuArea` 的三档比 `0.5` 更能表达「顶部/半屏/全屏」
+- 契约仍满足 §13 的对策「先冻结 defaults 常量」：新增 `frontend/biliPlus/src/constants/playerSettings.ts`，
+  设置页与播放器共用同一份 `PLAYER_SETTINGS_DEFAULTS` 与映射函数
+- 读取时通过 `toRatio()` 同时兼容比例口径（`0.8`）与百分比口径（`80`），后端早期写入的数据同样生效
+
+### C.2 P0.1 播放器侧补充说明
+
+DPlayer 1.25 只把 `danmaku.opacity` / `unlimited` 透传到弹幕实例，**字号、显示区域、滚动速度都不在 options 里**。
+因此 `DanmakuPlayer.vue` 在挂载后直接作用于 DOM：字号与显示区域写 `.dplayer-danmaku` 内联样式，
+速度用带 id 的样式表压过 DPlayer 自带的 5s 关键帧。这是版本限制，不是实现取巧。
+
+### C.3 P0.3 稿件软删与标签
+
+- 软删用 `video.status = -1`（`VideoStatus.DELETED`），与附录 B 一致；新增 `constant/VideoStatus.java` 与
+  `AdminVideoServiceImpl` 共用，消除两端各写一份状态常量的隐患
+- 投稿标签此前**全链路无效**：`VideoUploadDTO.tags` 收了但从未落库。本期补上 `tag` / `video_tag` 持久化
+  （新增 `VideoTagMapper`），投稿与编辑两条路径共用；`GET /pp/people/my/videos` 返回 `MyVideoVO.tags`
+
+### C.4 P0.5 推荐作者昵称
+
+`VideoMapper.recommend()` 由注解 SQL 改为 XML join（返回 `GetListVideoVO`），
+补上 `nickname` / `avatar`，消除 §5.5 里「`用户{id}`」的占位显示。
+
+### C.5 P1.3 主播收入账变的口径
+
+`wallet_transaction.balance_after` 表示「变动后余额」，但主播收入记在 `host_income.total_income` 而非
+`user_wallet.balance`。处理方式：`biz_type = 'host_income'` 时 `balance_after` 即主播累计收益，
+并在建表注释与 `WalletTransaction` 类注释中写明口径由 `biz_type` 决定。
+未新增列，避免为单一场景引入冗余字段。
+
+### C.6 P1.2 连麦：本期落地降级方案（方案 B）
+
+`live.srs.rtc-enabled` 默认 `false`，本次实现：
+
+- 后端正准备返回 `mic_ready` 的 `rtcAvailable` 与（配置 RTC 时才有）`token`，信令链路完整可验
+- 前端在 `rtcAvailable=false` 时给出明确提示并**不渲染连麦小窗**，修掉「假小窗」
+- `rtcAvailable=true` 时展示「连麦已建立，等待音视频接入」文字态，而不是空白 `<video>`
+
+**未做**：真实 WebRTC 推拉流挂接。理由：1v1 连麦需要双向 publish/play 的 SDP 交换，
+本机没有可用的 RTC 版 SRS，写了也无法验证，按 §1.2「或明确降级」与 §6.2「可先只验证信令 + token 返回」收口。
+开启 RTC 前请先在具备 SRS RTC 的环境补齐挂流代码。
+
+### C.7 P1.4 直播回放依赖录制配置
+
+回放登记由 `live.replay.enabled` 与 `live.replay.play-url-template` 两个开关控制，
+默认 `false` + 空模板 → 下播不写回放记录，接口返回空列表，主流程不受影响（与 §6.4 一致）。
+
+### C.8 P2.4 默认收藏夹改为懒创建
+
+§7.4 要求「注册时自动创建默认收藏夹」。实现改为**首次使用收藏夹能力时懒创建**（`ensureDefaultFolder`），
+在「列收藏夹 / 收藏视频 / 查夹内视频」三个入口都会先补建。
+原因：注册路径因此不必耦合收藏夹服务，而验收项（默认夹不可删、无 folderId 进默认夹、旧数据可用）完全满足。
+历史 `video_favorite.folder_id IS NULL` 的数据按默认夹处理，无需数据迁移脚本。
+
+### C.9 P2.5 动态触发点
+
+自动投稿动态落在**管理端审核通过**（`AdminVideoServiceImpl.approve`）而非投稿时，
+保证动态里出现的都是已公开视频；写入前用 `type = 2 AND video_id = ?` 去重，重复审核不会产生重复动态。
+
+### C.10 管理端构建：修复阻断性 tsconfig 与遗留页面
+
+§16 要求 `biliPlusAdmin` 也必须 `npm run build` 通过，但该命令在本次改造**之前就是失败的**，原因与本期功能无关：
+
+1. `biliPlusAdmin/tsconfig.json` 把 `baseUrl` / `paths`（`@/*`）写在根配置里，而根配置只有 `references`、
+   `files: []`。TS 项目引用**不会继承**被引用项目之外根配置的 compilerOptions，
+   于是 `tsconfig.app.json` 完全不知道 `@/*`，所有 `@/...` 导入都报 TS2307。
+   已把 `baseUrl` + `paths` 下沉到实际编译 `src` 的 `tsconfig.app.json`。
+2. 修复该问题后暴露出的其余历史类型错误：`utils/request.ts` 的 axios 泛型与拦截器签名、
+   `VideoShenHe.vue` 的 `el-radio-button :value="null"`、`VideoShenHeDetails.vue` 的
+   `el-descriptions column="1"`（应为 `:column="1"`）、`BannerManage.vue` 未使用的 `handleUploadSuccess`、
+   `router/index.ts` 未使用的 `from` 参数，以及 `About.vue` 的类型声明缺失。
+3. `views/About.vue` 是没有任何菜单/链接入口的分片上传演示页（`/about`），
+   与 §5.5 清理 `/test` 同性质，已移入 `biliPlusAdmin/src/_legacy/` 并删除路由。
+
+### C.11 遗留与已知限制
+
+| 项 | 说明 |
+|----|------|
+| 稿件标签编辑 | 已支持编辑，但换视频源文件仍不支持（与 §5.3 约束一致） |
+| 举报联动 | 视频下架、评论软删已联动；用户/直播间举报目前仅记录结论（§7.6 允许） |
+| 通知推送 | 采用 Header 30s 轮询 `unread-count`（§7.2 的 MVP 方案），未做 WebSocket 推送 |
+| 前端类型检查 | `frontend/biliPlus` 的 `npm run type-check`（vue-tsc）在改造前就存在大量历史报错，本期以 `npm run build` 为准；`biliPlusAdmin` 的 `npm run build` 已含 vue-tsc 且通过 |
+| 回放转码 | `live_replay.status` 预留「转码中」，本期直接置为可用，未接转码任务 |
+| 未在浏览器实测 | 本轮只做了编译、单测与构建验证，未启动 MySQL/Redis/SRS 跑端到端冒烟，§12.2 的联调清单仍需人工过一遍 |
+ 实现过程中若接口或表结构必须调整，请在对应章节追加「变更记录」小节，保持契约可追溯。

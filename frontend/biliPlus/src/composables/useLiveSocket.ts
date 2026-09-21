@@ -1,6 +1,7 @@
 // src/composables/useLiveSocket.ts
 import { ref, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { wsLiveUrl } from '@/utils/env'
 
 export interface LiveSocketHandlers {
     onChat?: (msg: any) => void
@@ -59,7 +60,7 @@ export function useLiveSocket() {
             join(roomId)
             return
         }
-        const wsUrl = `ws://localhost:8081/ws/live?token=${encodeURIComponent(token)}`
+        const wsUrl = `${wsLiveUrl()}?token=${encodeURIComponent(token)}`
         const ws = new WebSocket(wsUrl)
         socket.value = ws
 

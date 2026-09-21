@@ -12,6 +12,7 @@ import com.biliplus.properties.LiveProperties;
 import com.biliplus.result.PageResult;
 import com.biliplus.service.LiveMicService;
 import com.biliplus.service.LivePkService;
+import com.biliplus.service.LiveReplayService;
 import com.biliplus.service.LiveRoomService;
 import com.biliplus.websocket.LiveWebSocketHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -51,6 +52,9 @@ public class LiveRoomServiceImpl implements LiveRoomService {
 
     @Autowired
     private LivePkService livePkService;
+
+    @Autowired
+    private LiveReplayService liveReplayService;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -293,6 +297,14 @@ public class LiveRoomServiceImpl implements LiveRoomService {
     private void doStop(LiveRoom room) {
         room.setStatus(2);
         room.setEndTime(LocalDateTime.now());
+
+        // 登记回放要在清空 streamKey 之前，回放地址依赖流密钥
+        try {
+            liveReplayService.registerOnStop(room);
+        } catch (Exception e) {
+            log.warn("登记直播回放失败 roomId={}", room.getId(), e);
+        }
+
         room.setStreamKey(null);
         room.setPlayUrl(null);
         room.setPushUrl(null);

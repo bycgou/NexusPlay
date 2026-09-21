@@ -3,12 +3,13 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  startLive, stopLive, getMyLiveRoom, getStreamStatus, type LiveRoom
+  startLive, stopLive, getMyLiveRoom, getStreamStatus, listLiveRooms, type LiveRoom
 } from '@/api/live'
 import { getCategories } from '@/api/category'
-import { listMicPending } from '@/api/pk'
+import { listMicPending, invitePk, respondPk } from '@/api/pk'
 import { useLiveSocket } from '@/composables/useLiveSocket'
 import ImageUploader from '@/components/ImageUploader.vue'
+import { OBS_RTMP_SERVER } from '@/utils/env'
 
 const router = useRouter()
 const title = ref('')
@@ -31,7 +32,18 @@ let statusTimer: any = null
 
 const { connect, disconnect, chat, micAccept } = useLiveSocket()
 
-const obsServer = () => 'rtmp://localhost:1935/live'
+/**
+ * OBS 服务器地址优先从后端下发的 pushUrl 推导（去掉末尾 streamKey），
+ * 保证与后端 live.srs.* 配置一致；取不到时回退到 VITE_OBS_RTMP。
+ */
+const obsServer = () => {
+  const pushUrl = liveRoom.value?.pushUrl || ''
+  if (pushUrl) {
+    const derived = pushUrl.replace(/\/[^/]+$/, '')
+    if (derived) return derived
+  }
+  return OBS_RTMP_SERVER
+}
 
 const loadCategories = async () => {
   try {
@@ -183,9 +195,68 @@ const connectSocket = () => {
       micPending.value.push(m)
     },
     onPkInvite: (m) => {
-      ElMessage.info(`收到 PK 邀请（房间 ${m.fromRoomId}）`)
+      handlePkInvite(m)
+    },
+    onPkStart: (m) => {
+      ElMessage.success('PK 已开始，请在直播间查看分屏')
+    },
+    onPkCancel: () => {
+      ElMessage.info('PK 邀请已被取消')
     }
   })
+}
+
+/** 对手主播同意后开始 PK；拒绝则回执取消 */
+const handlePkInvite = async (m: any) => {
+  try {
+    await ElMessageBox.confirm(`房间 ${m.fromRoomId} 邀你 PK，是否接受？`, 'PK 邀请', { type: 'info' })
+    await respondPk(m.pkId, true)
+    ElMessage.success('已接受 PK，请在直播间查看分屏')
+  } catch {
+    await respondPk(m.pkId, false).catch(() => {})
+  }
+}
+
+// ===== 发起 PK =====
+
+const pkPickerVisible = ref(false)
+const pkOpponents = ref<any[]>([])
+const pkPicking = ref(false)
+const pkInviting = ref(false)
+
+const openPkPicker = async () => {
+  pkPickerVisible.value = true
+  pkPicking.value = true
+  try {
+    const res: any = await listLiveRooms(1, 50)
+    const records = res?.data?.records || []
+    const myRoomId = liveRoom.value?.id
+    pkOpponents.value = records.filter((r: any) => Number(r.id) !== Number(myRoomId))
+    if (!pkOpponents.value.length) {
+      ElMessage.info('当前没有其他正在直播的房间')
+    }
+  } catch (e) {
+    console.error('加载对手房间失败', e)
+  } finally {
+    pkPicking.value = false
+  }
+}
+
+const confirmInvitePk = async (opponentRoomId: number) => {
+  pkInviting.value = true
+  try {
+    const res: any = await invitePk(opponentRoomId)
+    if (res?.code === 1) {
+      ElMessage.success('PK 邀请已发出，等待对方同意')
+      pkPickerVisible.value = false
+    } else {
+      ElMessage.error(res?.msg || '发起 PK 失败')
+    }
+  } catch (e) {
+    console.error('发起 PK 失败', e)
+  } finally {
+    pkInviting.value = false
+  }
 }
 
 const refreshMicPending = async () => {
@@ -292,10 +363,31 @@ onUnmounted(() => {
         </div>
         <div class="top-actions">
           <el-button @click="checkStream" :loading="checkingStream">检测推流</el-button>
+          <el-button type="primary" @click="openPkPicker">发起 PK</el-button>
           <el-button @click="goRoomAsHost">进入直播间（主播模式）</el-button>
           <el-button type="danger" @click="handleStop">下播</el-button>
         </div>
       </div>
+
+      <!-- 发起 PK：选一个正在直播的对手房间 -->
+      <el-dialog v-model="pkPickerVisible" title="选择 PK 对手" width="560px">
+        <div v-loading="pkPicking" class="pk-picker">
+          <el-empty v-if="!pkPicking && !pkOpponents.length" description="当前没有其他正在直播的房间" />
+          <div v-for="o in pkOpponents" :key="o.id" class="pk-candidate">
+            <img v-if="o.coverUrl" :src="o.coverUrl" class="pk-cover" alt="" />
+            <div class="pk-info">
+              <div class="pk-title">{{ o.title }}</div>
+              <div class="pk-host">{{ o.hostNickname || ('主播' + o.userId) }}</div>
+            </div>
+            <el-button size="small" type="primary" :loading="pkInviting" @click="confirmInvitePk(o.id)">
+              邀请 PK
+            </el-button>
+          </div>
+        </div>
+        <template #footer>
+          <el-button @click="pkPickerVisible = false">关闭</el-button>
+        </template>
+      </el-dialog>
 
       <div class="live-grid">
         <div class="col-main">
@@ -303,8 +395,8 @@ onUnmounted(() => {
           <div class="obs-box">
             <div class="row">
               <div class="label">服务器</div>
-              <code>{{ obsServer() }}</code>
-              <el-button size="small" @click="copyText(obsServer(), '服务器已复制')">复制</el-button>
+              <code>{{ obsServer() || '未配置（请设置 VITE_OBS_RTMP）' }}</code>
+              <el-button size="small" :disabled="!obsServer()" @click="copyText(obsServer(), '服务器已复制')">复制</el-button>
             </div>
             <div class="row">
               <div class="label">串流密钥</div>
@@ -469,6 +561,33 @@ onUnmounted(() => {
   gap: 8px;
   flex-wrap: wrap;
 }
+/* 发起 PK：对手选择 */
+.pk-picker { min-height: 80px; }
+.pk-candidate {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.pk-candidate:last-child { border-bottom: none; }
+.pk-cover {
+  width: 76px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+  background: #f5f7fa;
+}
+.pk-info { flex: 1; min-width: 0; }
+.pk-title {
+  font-size: 14px;
+  color: #303133;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pk-host { font-size: 12px; color: #909399; }
 .live-grid {
   display: grid;
   grid-template-columns: 1.5fr 1fr;

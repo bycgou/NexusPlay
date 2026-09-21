@@ -1,6 +1,6 @@
 import axios from 'axios'
 // 关键：用 import type 导入类型（仅 TypeScript 识别，不影响运行时）
-import type { AxiosRequestConfig, AxiosInstance } from 'axios'
+import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
@@ -22,7 +22,7 @@ const service: AxiosInstance = axios.create({
 
 // 请求拦截器
 service.interceptors.request.use(
-    (config: AxiosRequestConfig) => {
+    (config: InternalAxiosRequestConfig) => {
         const authStore = useAuthStore()
         if (authStore.token && config.headers) {
             config.headers.Authorization = `Bearer ${authStore.token}`
@@ -35,10 +35,10 @@ service.interceptors.request.use(
     }
 )
 
-// 响应拦截器（返回完整响应，包含code、msg、data）
+// 响应拦截器（把 AxiosResponse 拆成业务层 BaseResponse）
 service.interceptors.response.use(
-    <T = any>(response): BaseResponse<T> => {                                           // 返回类型改为BaseResponse<T>
-        const res = response.data as BaseResponse<T>
+    (response: AxiosResponse): any => {
+        const res = response.data as BaseResponse
         if (res.code !== 1) {
             ElMessage.error(res.msg || '接口请求失败')
             return Promise.reject(res) // 失败时reject，进入catch

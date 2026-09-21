@@ -12,6 +12,7 @@ import com.biliplus.result.Result;
 import com.biliplus.service.GiftService;
 import com.biliplus.service.LiveMicService;
 import com.biliplus.service.LivePkService;
+import com.biliplus.service.LiveReplayService;
 import com.biliplus.service.LiveRoomService;
 import com.biliplus.utils.UserContext;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,9 @@ public class LiveController {
 
     @Autowired
     private LivePkService livePkService;
+
+    @Autowired
+    private LiveReplayService liveReplayService;
 
     // ========== 开播 / 观看 ==========
 
@@ -171,6 +175,25 @@ public class LiveController {
             Long userId = UserContext.getCurrentUserId();
             liveMicService.leave(userId, id);
             return Result.success("ok");
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    // ========== 回放 ==========
+
+    /** 回放列表；userId 为空表示全站 */
+    @GetMapping("/replays")
+    public Result<PageResult> replays(@RequestParam(required = false) Long userId,
+                                      @RequestParam(defaultValue = "1") Integer page,
+                                      @RequestParam(defaultValue = "12") Integer size) {
+        return Result.success(liveReplayService.list(userId, page, size));
+    }
+
+    @GetMapping("/replays/{id}")
+    public Result<com.biliplus.pojo.entity.LiveReplay> replay(@PathVariable Long id) {
+        try {
+            return Result.success(liveReplayService.getById(id));
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }

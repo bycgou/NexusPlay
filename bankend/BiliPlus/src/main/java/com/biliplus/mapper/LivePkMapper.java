@@ -3,6 +3,8 @@ package com.biliplus.mapper;
 import com.biliplus.pojo.entity.LivePk;
 import org.apache.ibatis.annotations.*;
 
+import java.util.List;
+
 @Mapper
 public interface LivePkMapper {
 
@@ -21,6 +23,10 @@ public interface LivePkMapper {
 
     @Select("SELECT * FROM live_pk WHERE status = 0 AND room_b_id = #{roomId} ORDER BY id DESC LIMIT 1")
     LivePk selectPendingInvite(@Param("roomId") Long roomId);
+
+    /** 进行中的全部 PK，供定时任务判断是否到期 */
+    @Select("SELECT * FROM live_pk WHERE status = 1")
+    List<LivePk> selectAllActive();
 
     @Update("UPDATE live_pk SET status = #{status}, score_a = #{scoreA}, score_b = #{scoreB}, " +
             "start_time = #{startTime}, end_time = #{endTime} WHERE id = #{id}")

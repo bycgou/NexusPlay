@@ -34,8 +34,17 @@ public class JwtTokenPeopleInterceptor implements HandlerInterceptor {
             "/pp/live/gifts",
             "/pp/live/pk/active",
             "/pp/live/rooms/", // 含详情/stream-status/mic history 等 GET
+            "/pp/live/replays", // 直播回放列表/详情
+            "/pp/dynamics/hot", // 全站动态广场
+            "/pp/dynamics/user/", // 某人动态
+            "/pp/notifications/unread-count", // 未读红点，未登录返回 0 而不是 401
             "/pp/anime" // 番剧列表/详情
     };
+
+    /** 允许匿名 POST 的路径（分享计数等只读语义的埋点） */
+    private static final java.util.regex.Pattern PUBLIC_POST = java.util.regex.Pattern.compile(
+            "^/pp/videos/\\d+/share$"
+    );
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -58,6 +67,11 @@ public class JwtTokenPeopleInterceptor implements HandlerInterceptor {
                 trySetCurrentUserFromHeader(request);
                 return true;
             }
+        }
+
+        if ("POST".equalsIgnoreCase(method) && PUBLIC_POST.matcher(path).matches()) {
+            trySetCurrentUserFromHeader(request);
+            return true;
         }
 
         String authHeader = request.getHeader("Authorization");

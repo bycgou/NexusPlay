@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -33,6 +34,13 @@ public class LiveMicServiceImpl implements LiveMicService {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    /**
+     * 是否配置了 RTC 媒体服务（live.srs.rtc-enabled）。
+     * 未配置时不阻塞连麦信令，但会向前端返回 rtcAvailable=false，由前端给出降级提示。
+     */
+    @Value("${live.srs.rtc-enabled:false}")
+    private boolean rtcEnabled;
 
     @Override
     public LiveMicSession apply(Long guestId, Long roomId) {
@@ -106,7 +114,12 @@ public class LiveMicServiceImpl implements LiveMicService {
 
         String rtcRoom = "live-" + session.getLiveRoomId();
         result.put("rtcRoom", rtcRoom);
-        result.put("token", "mic-" + sessionId + "-" + System.currentTimeMillis());
+        result.put("rtcAvailable", rtcEnabled);
+        if (rtcEnabled) {
+            result.put("token", "mic-" + sessionId + "-" + System.currentTimeMillis());
+        } else {
+            log.info("RTC 未启用，连麦仅打通信令 sessionId={}", sessionId);
+        }
 
         try {
             // 给双方
@@ -117,7 +130,7 @@ public class LiveMicServiceImpl implements LiveMicService {
             hostNode.put("role", "host");
             hostNode.put("guestUserId", session.getGuestUserId());
             hostNode.put("rtcRoom", rtcRoom);
-            hostNode.put("token", (String) result.get("token"));
+            hostNode.put("rtcAvailable", rtcEnabled);
 
             ObjectNode guestNode = objectMapper.createObjectNode();
             guestNode.put("type", "mic_ready");
@@ -126,7 +139,13 @@ public class LiveMicServiceImpl implements LiveMicService {
             guestNode.put("role", "guest");
             guestNode.put("guestUserId", session.getGuestUserId());
             guestNode.put("rtcRoom", rtcRoom);
-            guestNode.put("token", (String) result.get("token"));
+            guestNode.put("rtcAvailable", rtcEnabled);
+
+            if (rtcEnabled) {
+                String token = (String) result.get("token");
+                hostNode.put("token", token);
+                guestNode.put("token", token);
+            }
 
             // 房间广播（主播在房间）；guest 可能也在
             liveWebSocketHandler.broadcast(session.getLiveRoomId(), hostNode.toString());
@@ -167,6 +186,24 @@ public class LiveMicServiceImpl implements LiveMicService {
 
     @Override
     public void forceCloseByRoom(Long roomId) {
+        // 下播时先按正常流程结束进行中的连麦并广播，前端才能销毁 RTC 恢复布局
+        LiveMicSession active = micSessionMapper.selectActive(roomId);
+        if (active != null) {
+            active.setStatus(2);
+            active.setEndTime(LocalDateTime.now());
+            micSessionMapper.updateStatus(active);
+            try {
+                ObjectNode node = objectMapper.createObjectNode();
+                node.put("type", "mic_end");
+                node.put("roomId", roomId);
+                node.put("sessionId", active.getId());
+                node.put("reason", "room_closed");
+                liveWebSocketHandler.broadcast(roomId, node.toString());
+            } catch (Exception e) {
+                log.warn("下播广播 mic_end 失败 roomId={}", roomId, e);
+            }
+        }
+        // 兜底清理该房间遗留的待处理申请与进行中记录
         micSessionMapper.closeByRoom(roomId);
     }
 }
