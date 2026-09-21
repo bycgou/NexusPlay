@@ -65,7 +65,7 @@
 
         <div class="login-footer">
           <span>还没有账号？</span>
-          <router-link to="/register" class="register-link">立即注册</router-link>
+          <router-link to="/?register=1" class="register-link">立即注册</router-link>
         </div>
       </el-form>
     </div>

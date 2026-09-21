@@ -29,12 +29,8 @@ const routers: RouteRecordRaw[] = [
         component: () => import('@/views/login/UserLogin.vue'),
         meta: {title: '登录'}
     },
-    {
-        path: '/register',
-        name: 'Register',
-        component: () => import('@/views/login/Register.vue'),
-        meta: {title: '注册'}
-    },
+    // 注册不再使用独立页面：views/login/Register.vue 本就是空壳，
+    // 实际注册流程在 Header 的注册弹窗里，登录页链接用 /?register=1 触发
     {
         path: '/contribute',
         name: 'Contribute',

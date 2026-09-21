@@ -1,10 +1,30 @@
-# NexusPlay 下一阶段升级开发文档
+# NexusPlay 升级实施记录（UPGRADE_PLAN）
 
-> 范围：体验收口 · 直播闭环 · 资金流水 · 社区功能 · 管理运营  
-> 仓库：`bankend/BiliPlus` · `frontend/biliPlus` · `biliPlusAdmin`  
-> 日期：2026-09-13  
-> 前置：`FIX_PLAN.md` · `DEV_PLAN.md` · `LIVE_PLAN.md` · `LIVE_FULL_PLAN.md`  
-> 性质：在现有 MVP 之上**增量升级**，不推翻已实现模块
+> **文档性质**：原「下一阶段升级开发文档」，已按项目实际内容回写为 **实施记录 + 剩余计划**。
+> **范围**：体验收口 · 直播闭环 · 资金流水 · 社区功能 · 管理运营
+> **仓库**：`bankend/BiliPlus` · `frontend/biliPlus` · `biliPlusAdmin`
+> **计划日期**：2026-09-13 · **实施回写**：见文末附录 C
+> **前置文档**：`FIX_PLAN.md` / `DEV_PLAN.md` / `LIVE_PLAN.md` / `LIVE_FULL_PLAN.md` 均已删除；本文档是升级契约的唯一来源，项目用法见 `README.md`
+> **性质**：在现有 MVP 之上**增量升级**，不推翻已实现模块
+
+## 实施状态速览
+
+| 阶段 | 名称 | 状态 | 实际交付 |
+|------|------|------|----------|
+| **P0** | 体验收口与工程债 | ✅ 已完成 | 播放设置真正生效、env 配置外置、稿件编辑/重提/软删 + 标签落库、分享、清理 `/test` 路由 |
+| **P1** | 直播闭环与资金流水 | ✅ 已完成 | 主播发起 PK + 到期自动结束、连麦信令（RTC 未配置时明确降级）、充值订单与钱包账变、直播回放 |
+| **P2** | 社区闭环 | ✅ 已完成 | 通知中心、播放历史、收藏夹、动态 Feed、举报治理（成立联动下架/软删） |
+| **P3** | 运营与体验增强 | ⬜ 未开始 | 看板、用户管理、操作日志、番剧详情页、推荐增强、移动端优化 |
+
+**当前验证结果**
+
+| 检查项 | 结果 |
+|--------|------|
+| 后端 `mvn test` | 15 个测试类 / **116 个用例全部通过** |
+| `frontend/biliPlus` `npm run build` | 通过 |
+| `biliPlusAdmin` `npm run build`（含 vue-tsc） | 通过 |
+| 数据库基线 | `bankend/BiliPlus/sql/biliplus.sql`，**37 张表**，已合并全部新表 |
+| 实现偏差与已知限制 | 见**附录 C** |
 
 ---
 
@@ -185,24 +205,27 @@ app:
 
 ## 4. 阶段划分总览
 
-| 阶段 | 名称 | 粗估 | 核心交付 |
-|------|------|------|----------|
-| **P0** | 体验收口与工程债 | 3–4 天 | 设置生效、配置外置、稿件管理、分享、清 test |
-| **P1** | 直播闭环与资金流水 | 4–5 天 | PK 发起、连麦媒体、账变订单、回放 |
-| **P2** | 社区闭环 | 4–5 天 | 通知、历史、收藏夹、动态、举报 |
-| **P3** | 运营与体验增强 | 3–4 天 | 看板、用户管理、操作日志、番剧详情、推荐 |
-| **合计** | — | **约 14–18 人日** | 两人可前后端并行压缩至 ~10 人日 |
+| 阶段 | 名称 | 状态 | 粗估 | 核心交付 |
+|------|------|------|------|----------|
+| **P0** | 体验收口与工程债 | ✅ 已完成 | 3–4 天 | 设置生效、配置外置、稿件管理、分享、清 test |
+| **P1** | 直播闭环与资金流水 | ✅ 已完成 | 4–5 天 | PK 发起、连麦媒体、账变订单、回放 |
+| **P2** | 社区闭环 | ✅ 已完成 | 4–5 天 | 通知、历史、收藏夹、动态、举报 |
+| **P3** | 运营与体验增强 | ⬜ 未开始 | 3–4 天 | 看板、用户管理、操作日志、番剧详情、推荐 |
+| **合计** | — | P0–P2 已交付 | **约 14–18 人日** | 两人可前后端并行压缩至 ~10 人日 |
 
-执行约定（与 `DEV_PLAN.md` 一致）：
+执行约定（`DEV_PLAN.md` 已删除，约定沿用至今）：
 
 1. 每阶段：编码 → 单测 → 自测清单 → 合并 → 下一阶段  
 2. 不引入与阶段无关的大重构  
-3. 表结构以 `biliplus.sql` 为基线，增量脚本放 `bankend/BiliPlus/sql/upgrade_*.sql`  
+3. 表结构以 `bankend/BiliPlus/sql/biliplus.sql` 为基线（已合并全部新表，37 张）；
+   历史上的 `upgrade_p*.sql` 增量脚本已并入该基线并从仓库移除  
 4. 前后端字段契约先写在本文档接口表，实现时不得随意改名  
 
 ---
 
 ## 5. P0 — 体验收口与工程债
+
+> **状态：✅ 已完成。** 本节的需求与接口均已落地；实现偏差见附录 C.1–C.4、C.10。
 
 ### 5.1 播放设置真正生效
 
@@ -367,6 +390,9 @@ app:
 ---
 
 ## 6. P1 — 直播闭环与资金流水
+
+> **状态：✅ 已完成。** 充值订单、账变、PK 发起、回放均已落地；
+> 连麦只做到「信令 + rtcAvailable 降级」，真实 WebRTC 挂流未做（附录 C.6）。
 
 ### 6.1 主播发起 PK
 
@@ -570,9 +596,16 @@ CREATE TABLE IF NOT EXISTS `live_replay` (
 
 ## 7. P2 — 社区闭环
 
+> **状态：✅ 已完成。** 通知 / 历史 / 收藏夹 / 动态 / 举报均已落地并配单测；
+> 默认收藏夹改为懒创建、动态触发点落在审核通过，见附录 C.8–C.9。
+
 ### 7.1 数据库（P2 统一脚本）
 
-文件：`bankend/BiliPlus/sql/upgrade_p2_community.sql`
+> **路径变更**：原计划输出 `bankend/BiliPlus/sql/upgrade_p2_community.sql`；
+> 现已**并入 `bankend/BiliPlus/sql/biliplus.sql`**（37 表单文件基线），增量脚本已删除。
+> 下列建表语句保留作为表结构契约参考。
+
+文件：~~`bankend/BiliPlus/sql/upgrade_p2_community.sql`~~ → **`bankend/BiliPlus/sql/biliplus.sql`**
 
 ```sql
 -- 播放历史
@@ -853,6 +886,9 @@ CREATE TABLE IF NOT EXISTS `dynamic_like` (
 
 ## 8. P3 — 运营与体验增强
 
+> **状态：⬜ 未开始。** 本节仍为待实施计划，代码中尚无对应 Controller / 页面。
+> 与 P0–P2 的已实现部分并列保留，作为下一阶段的契约。
+
 ### 8.1 管理端数据看板
 
 **接口**
@@ -995,81 +1031,98 @@ score = w1 * 热度(播放+点赞*3+评论*5)
 
 ## 9. 接口总表（汇总）
 
+> **状态说明**：P0–P2 行的接口**均已实现**并在代码中可查；P3 行仍为待实施契约。
+> 公开 GET 放行清单以代码 `JwtTokenPeopleInterceptor.PUBLIC_GET_PREFIXES` 为准（见本节末尾，已同步实际值）。
+
 ### 9.1 用户端 `/pp/**`
 
-| 阶段 | 方法 | 路径 | 说明 |
-|------|------|------|------|
-| P0 | PUT | `/pp/people/my/videos/{id}` | 编辑稿件 |
-| P0 | DELETE | `/pp/people/my/videos/{id}` | 删除稿件 |
-| P0 | POST | `/pp/people/my/videos/{id}/resubmit` | 驳回重提 |
-| P0 | POST | `/pp/videos/{id}/share` | 分享计数（可选） |
-| P1 | POST | `/pp/live/wallet/recharge/orders` | 创建充值单 |
-| P1 | POST | `/pp/live/wallet/recharge/orders/{orderNo}/pay` | 模拟支付 |
-| P1 | GET | `/pp/live/wallet/transactions` | 我的账变 |
-| P1 | GET | `/pp/live/replays` | 回放列表 |
-| P2 | GET/POST/PUT/DELETE | `/pp/notifications*` | 通知 |
-| P2 | POST/GET/DELETE | `/pp/play-history*` | 播放历史 |
-| P2 | CRUD | `/pp/favorite-folders*` | 收藏夹 |
-| P2 | CRUD | `/pp/dynamics*` | 动态 |
-| P2 | POST | `/pp/reports` | 举报 |
-| P3 | GET | `/pp/anime/{id}/episodes` 等 | 番剧详情 |
+| 阶段 | 方法 | 路径 | 说明 | 状态 |
+|------|------|------|------|------|
+| P0 | PUT | `/pp/people/my/videos/{id}` | 编辑稿件 | ✅ |
+| P0 | DELETE | `/pp/people/my/videos/{id}` | 删除稿件（软删 status=-1） | ✅ |
+| P0 | POST | `/pp/people/my/videos/{id}/resubmit` | 驳回重提 | ✅ |
+| P0 | POST | `/pp/videos/{id}/share` | 分享计数（匿名可调） | ✅ |
+| P1 | POST | `/pp/live/wallet/recharge/orders` | 创建充值单 | ✅ |
+| P1 | POST | `/pp/live/wallet/recharge/orders/{orderNo}/pay` | 模拟支付 | ✅ |
+| P1 | GET | `/pp/live/wallet/transactions` | 我的账变 | ✅ |
+| P1 | GET | `/pp/live/replays`、`/pp/live/replays/{id}` | 回放列表/详情 | ✅ |
+| P2 | GET/POST | `/pp/notifications`、`/unread-count`、`/{id}/read`、`/read-all` | 通知 | ✅ |
+| P2 | POST/GET/DELETE | `/pp/play-history`、`/video/{videoId}`、`/{videoId}` | 播放历史 | ✅ |
+| P2 | GET/POST/PUT/DELETE | `/pp/favorite-folders`、`/{id}`、`/{id}/videos` | 收藏夹 | ✅ |
+| P2 | POST/GET/DELETE | `/pp/dynamics`、`/feed`、`/hot`、`/user/{id}`、`/{id}/like` | 动态 | ✅ |
+| P2 | POST | `/pp/reports` | 举报 | ✅ |
+| P3 | GET | `/pp/anime/{id}/episodes` 等 | 番剧详情 | ⬜ |
 
 ### 9.2 管理端 `/admin/**`
 
-| 阶段 | 方法 | 路径 | 说明 |
-|------|------|------|------|
-| P1 | GET | `/admin/live/wallet/transactions` | 账变查询 |
-| P2 | GET/POST | `/admin/reports`、`.../handle` | 举报 |
-| P2 | POST | `/admin/notifications` | 系统通知 |
-| P3 | GET | `/admin/stats/overview`、`/trend` | 看板 |
-| P3 | GET/POST | `/admin/users*` | 用户管理 |
-| P3 | POST | `/admin/user/register` | 管理员注册 |
-| P3 | GET | `/admin/operation-logs` | 操作日志 |
+| 阶段 | 方法 | 路径 | 说明 | 状态 |
+|------|------|------|------|------|
+| P1 | GET | `/admin/live/wallet/transactions` | 账变对账查询 | ✅ |
+| P2 | GET/POST | `/admin/reports`、`/admin/reports/{id}/handle` | 举报列表与处理 | ✅ |
+| P2 | POST | `/admin/notifications` | 系统通知广播 | ✅ |
+| P3 | GET | `/admin/stats/overview`、`/trend` | 看板 | ⬜ |
+| P3 | GET/POST | `/admin/users*` | 用户管理 | ⬜ |
+| P3 | POST | `/admin/user/register` | 管理员注册（Controller 仍是 TODO） | ⬜ |
+| P3 | GET | `/admin/operation-logs` | 操作日志 | ⬜ |
 
-**公开 GET 放行**（`JwtTokenPeopleInterceptor`）：
+**公开 GET 放行**（以 `JwtTokenPeopleInterceptor` 实际代码为准）：
 
 ```text
-/pp/videos/**（已有）
-/pp/comments（已有）
-/pp/live/rooms
-/pp/live/rooms/{id}
-/pp/live/gifts
-/pp/anime/**、/pp/anime/{id}/episodes
-/pp/dynamics/hot
-/pp/banners、/pp/categories
+/pp/videos/**              视频列表/详情/推荐
+/pp/comments               评论
+/pp/user/danmakuv3         弹幕
+/pp/categories             分类
+/pp/banners                轮播图
+/pp/people/user/           用户资料
+/pp/people/search          用户搜索
+/pp/interaction/video/     视频互动状态
+/pp/interaction/user/      用户互动状态
+/pp/live/rooms             直播列表/详情/stream-status
+/pp/live/gifts             礼物目录
+/pp/live/pk/active         进行中 PK
+/pp/live/replays           直播回放
+/pp/dynamics/hot           全站动态广场
+/pp/dynamics/user/         某人动态
+/pp/notifications/unread-count   未读红点（未登录返回 0）
+/pp/anime                  番剧列表/详情
 ```
 
+另有**匿名 POST** 放行：`/pp/videos/{id}/share`（正则 `^/pp/videos/\d+/share$`）。
 其余写操作与个人数据必须登录。
 
 ---
 
 ## 10. 前端路由增量
 
-| 路径 | 组件 | 阶段 | meta |
-|------|------|------|------|
-| `/notifications` | `Notify/NotificationPage.vue` | P2 | requiresAuth |
-| `/dynamic` | `dynamic/DynamicFeed.vue` | P2 | — |
-| `/anime/:id` | `anime/AnimeDetail.vue` | P3 | — |
-| `/admin` 看板 | Admin `Dashboard.vue` | P3 | admin token |
-| 删除 `/test` `/testTwo` | — | P0 | — |
+| 路径 | 组件（实际路径） | 阶段 | meta | 状态 |
+|------|------------------|------|------|------|
+| `/notifications` | `views/notify/NotificationPage.vue` | P2 | requiresAuth | ✅ |
+| `/dynamic` | `views/dynamic/DynamicFeed.vue` | P2 | — | ✅ |
+| `/live` | `views/live/LiveSquare.vue`（含「直播回放」Tab） | P1 | — | ✅ |
+| `/anime/:id` | `views/anime/AnimeDetail.vue` | P3 | — | ⬜ 尚未创建 |
+| `/admin` 看板 | Admin `Dashboard.vue` | P3 | admin token | ⬜ 尚未创建 |
+| ~~`/test` `/testTwo`~~ | 已删除，组件移入 `src/_legacy/` | P0 | — | ✅ |
+| ~~`/register`~~ | 空壳已删除，注册走 Header 弹窗（`/?register=1`） | — | — | ✅ |
+| ~~`/about`（管理端）~~ | 空壳已删除，移入 `biliPlusAdmin/src/_legacy/` | — | — | ✅ |
 
 ---
 
-## 11. 管理端菜单增量
+## 11. 管理端菜单（实际 Aside 项）
 
 ```text
-首页看板          /Home/Dashboard     P3
-视频审核          /Home/VideoShenHe   已有
-分类管理          /Home/Category      已有
-轮播图管理        /Home/Banner        已有
-直播管理          /Home/Live          已有
-直播分区          /Home/LiveCategory  已有
-礼物管理          /Home/Gift          已有
-打赏流水          /Home/GiftRecord    已有
-钱包账变          /Home/WalletTx      P1
-举报处理          /Home/Report        P2
-用户管理          /Home/User          P3
-操作日志          /Home/OperationLog  P3
+视频审核          /Home/VideoShenHe     ✅ 已有
+举报处理          /Home/Report          ✅ P2 已实现
+轮播图管理        /Home/Banner          ✅ 已有
+分类管理          /Home/Category        ✅ 已有
+直播管理          /Home/Live            ✅ 已有
+直播分区          /Home/LiveCategory    ✅ 已有
+礼物管理          /Home/Gift            ✅ 已有
+打赏流水          /Home/GiftRecord      ✅ 已有
+钱包账变          /Home/WalletTx        ✅ P1 已实现
+系统通知          /Home/Notification    ✅ P2 已实现（原计划未列入菜单，实现时补入）
+首页看板          /Home/Dashboard       ⬜ P3 未实现
+用户管理          /Home/User            ⬜ P3 未实现
+操作日志          /Home/OperationLog    ⬜ P3 未实现
 ```
 
 ---
@@ -1078,19 +1131,27 @@ score = w1 * 热度(播放+点赞*3+评论*5)
 
 ### 12.1 单元测试（Mockito，不依赖中间件）
 
-| 测试类 | 阶段 | 覆盖 |
-|--------|------|------|
-| `PeopleUserMyVideoServiceImplTest` | P0 | 编辑鉴权、重提状态、软删 |
-| `GiftServiceImplTest`（扩展） | P1 | 充值订单+账变、送礼账变、失败回滚 |
-| `LivePkServiceImplTest`（扩展） | P1 | 发起 PK 完整链路、到期结束 |
-| `LiveMicServiceImplTest`（扩展） | P1 | RTC 开关分支 |
-| `NotificationServiceImplTest` | P2 | 评论/关注/审核触发、已读 |
-| `PlayHistoryServiceImplTest` | P2 | upsert、分页、清空 |
-| `FavoriteFolderServiceImplTest` | P2 | 默认夹、删夹约束 |
-| `DynamicServiceImplTest` | P2 | feed 范围、自动动态 |
-| `ReportServiceImplTest` | P2 | 去重、处理联动 |
-| `AdminStatsServiceImplTest` | P3 | 看板聚合字段非空 |
-| `AdminUserServiceImplTest` | P3 | 封禁、权限角色 |
+**实际落地：15 个测试类 / 116 个用例，`mvn test` 全绿。** 路径：`bankend/BiliPlus/src/test/java/com/biliplus/service/`。
+
+| 测试类 | 覆盖内容 |
+|--------|----------|
+| `WalletServiceImplTest` | 创建订单金额校验、支付写账变（type/biz/balanceAfter）、并发抢支付不重复入账、按天对账区间补全 |
+| `GiftServiceImplTest` | 送礼在同一事务写两笔账变（支出 + 主播收入）、兼容充值走订单链路 |
+| `ReportServiceImplTest` | 未登录/原因越界、同一目标未结案去重、已处理不可重复处理、成立联动下架视频与软删评论、驳回不动目标 |
+| `DynamicServiceImplTest` | 发布内容校验、自动投稿动态去重、feed 关注范围、匿名广场态为 false、点赞开关、越权删除拒绝 |
+| `FavoriteFolderServiceImplTest` | 默认夹懒创建与复用、同名夹拒绝、删默认夹拒绝、越权、`folderId=null` 落默认夹 |
+| `PlayHistoryServiceImplTest` | 未登录不写历史、进度非负化、分页、清空 |
+| `CommentServiceImplTest` | 评论落库与评论数、回复触发通知、删除鉴权、评论点赞开关 |
+| `AdminVideoServiceImplTest` | 审核通过/驳回/下架、状态机、触发通知与自动动态 |
+| `LivePkServiceImplTest` | PK 邀请/响应/比分累加/结束鉴权 |
+| `LiveMicServiceImplTest` | 连麦申请校验、同意置运行、拒绝、离开结束 |
+| `LiveRoomServiceImplTest` | 开播校验与推流密钥、下播关闭连麦与 PK、列表分页 |
+| `VideoServiceImplTest` | 推荐返回带作者昵称的 `GetListVideoVO` |
+| `VideoSearchServiceTest` / `BannerServiceImplTest` / `CategoryServiceImplTest` | 既有回归，本期保持通过 |
+
+**尚未覆盖（P3 期一并补）**：`NotificationServiceImpl` 自身的分页/已读逻辑无独立测试类，
+通知触发路径已由 `CommentServiceImplTest`、`AdminVideoServiceImplTest` 通过 mock 断言；
+`PeopleUserServiceImpl` 的稿件编辑/重提/软删同样缺独立测试类（接口已实现，见附录 C.3）。
 
 ### 12.2 接口联调清单（Postman / 手工）
 
@@ -1143,18 +1204,23 @@ score = w1 * 热度(播放+点赞*3+评论*5)
 
 ---
 
-## 14. 交付物清单
+## 14. 交付物清单（按实际落盘路径）
 
-| 交付物 | 路径 |
-|--------|------|
-| 本开发文档 | `UPGRADE_PLAN.md` |
-| P0–P3 SQL 增量 | `bankend/BiliPlus/sql/upgrade_p*.sql` |
-| 后端新模块 | `controller/service/mapper`：MyVideo、WalletTx、Notification、PlayHistory、FavoriteFolder、Dynamic、Report、AdminStats、AdminUser… |
-| 前台页面 | 设置生效播放器、稿件管理、通知、动态、历史、收藏夹、番剧详情等 |
-| 管理端页面 | 看板、用户、举报、账变、日志 |
-| 环境模板 | `frontend/biliPlus/.env.*`、`bankend/BiliPlus/.env.template` |
-| 单测 | `src/test/java/com/biliplus/service/*Test.java` 按阶段扩展 |
-| 回归清单 | 本文档 §12 |
+| 交付物 | 实际路径 | 状态 |
+|--------|----------|------|
+| 本文档 | `UPGRADE_PLAN.md` | ✅ 已回写 |
+| 项目说明 | `README.md` | ✅ 已按实况重写 |
+| 数据库基线 | `bankend/BiliPlus/sql/biliplus.sql`（**37 张表**，含 P0–P2 全部新表与 `video_favorite.folder_id`） | ✅ 已合并 |
+| 历史增量脚本 | `upgrade_p1_wallet.sql` / `upgrade_p1_replay.sql` / `upgrade_p2_community.sql` / `fix_media_url_to_relative.sql` | ⚠️ 已并入基线并删除 |
+| 后端新接口 | `WalletController`、`NotificationController`、`PlayHistoryController`、`FavoriteFolderController`、`DynamicController`、`ReportController`、`AdminReportController`、`AdminNotificationController`；`PeopleUserController`/`VideoController`/`LiveController`/`AdminLiveController`/`InteractionController` 增补 | ✅ |
+| 后端新服务 | `WalletServiceImpl`、`NotificationServiceImpl`、`PlayHistoryServiceImpl`、`FavoriteFolderServiceImpl`、`DynamicServiceImpl`、`ReportServiceImpl`、`LiveReplayServiceImpl` | ✅ |
+| 后端新实体/Mapper | `WalletTransaction`、`RechargeOrder`、`Notification`、`PlayHistory`、`FavoriteFolder`、`Dynamic`、`Report`、`LiveReplay` 及对应 Mapper；`constant/VideoStatus`、`WalletTx`、`Notify`、`ReportTarget` | ✅ |
+| 前台页面 | `views/notify/NotificationPage.vue`、`views/dynamic/DynamicFeed.vue`；播放器设置生效（`constants/playerSettings.ts` + `DanmakuPlayer.vue`）、稿件管理（`VideoSettings.vue`）、直播 PK/连麦/账变（`LiveRoom.vue`/`LiveStart.vue`）、广场回放 Tab（`LiveSquare.vue`） | ✅ |
+| 管理端页面 | `views/Report/ReportManage.vue`、`views/Wallet/WalletTx.vue`、`views/Notification/NotificationSend.vue`；`Aside.vue` 菜单已含举报处理 / 钱包账变 / 系统通知 | ✅ |
+| 环境模板 | `bankend/BiliPlus/.env.template`、`frontend/biliPlus/.env.development` / `.env.production` / `.env.local.template` | ✅ |
+| 单测 | `bankend/BiliPlus/src/test/java/com/biliplus/service/*Test.java`（15 类 / 116 用例） | ✅ |
+| 遗留清理 | `views/test/**`、`views/components/test/**`、管理端 `views/About.vue` → 各自 `_legacy/`；`login/Register.vue`、`login/Settings.vue` 空壳已删除 | ✅ |
+| 回归清单 | 本文档 §12 | — |
 
 ---
 
@@ -1171,64 +1237,93 @@ score = w1 * 热度(播放+点赞*3+评论*5)
 **建议启动顺序**
 
 1. 确认本文档接口表与 defaults 字段  
-2. 执行/编写 `upgrade_p1_wallet.sql` 等增量脚本（可与编码并行）  
+2. 导入 `bankend/BiliPlus/sql/biliplus.sql`（单文件基线，已含全部新表；增量脚本已并入，无需再执行）  
 3. **从 P0 的播放设置生效 + env 外置开始**（用户可感知 + 降低联调成本）  
 4. P1 先做主播发起 PK + 账变（直播闭环价值最高）  
 5. P2 通知中心优先于动态（红点感知最强）  
 
----
-
-## 16. 验收总表（合并前检查）
-
-| 检查项 | 通过标准 |
-|--------|----------|
-| 编译 | 后端 `mvn -DskipTests compile` + `mvn test` |
-| 前端 build | `frontend/biliPlus` 与 `biliPlusAdmin` `npm run build` |
-| 主链路 | 浏览 → 播放 → 互动 → 投稿 → 审核 → 直播礼物无回归 |
-| 新功能 | 各阶段自测清单勾选完毕 |
-| 安全 | 无硬编码密钥；越权接口 403；未登录 401 |
-| 文档 | 偏差回写本文档；README 功能列表更新 |
+> P0–P2 已实施完毕，上述顺序仅在需要**从零复现**或**补做 P3** 时参考。
 
 ---
 
-## 附录 A — 现有关键文件索引
+## 16. 验收总表（按实际执行结果）
+
+| 检查项 | 通过标准 | 实际结果 |
+|--------|----------|----------|
+| 后端编译 | `mvn -DskipTests compile` | ✅ 通过 |
+| 后端单测 | `mvn test` | ✅ 15 类 / 116 用例全绿 |
+| 用户前台 build | `frontend/biliPlus` `npm run build` | ✅ 通过 |
+| 管理后台 build | `biliPlusAdmin` `npm run build`（含 vue-tsc） | ✅ 通过（顺带修复了历史 tsconfig 路径失效与类型错误，见 C.10） |
+| 主链路 | 浏览 → 播放 → 互动 → 投稿 → 审核 → 直播礼物无回归 | ⚠️ **未做端到端冒烟**：本轮只验证编译/单测/构建，未起 MySQL+Redis+SRS 跑真实链路 |
+| 新功能 | 各阶段自测清单 | ⚠️ 代码与单测齐备，但 §5.6 / §6.5 / §7.7 的手工清单仍需人工过一遍 |
+| 安全 | 无硬编码密钥入库；越权 403；未登录 401 | ✅ `.env` 未跟踪、`.env.template` 为唯一明文模板；稿件编辑/删除、举报处理、动态删除、收藏夹均做了归属校验 |
+| 文档 | 偏差回写本文档；README 更新 | ✅ 本文档已回写状态与附录 C；`README.md` 已按实况重写 |
+
+**下一步（若继续推进）**
+
+1. 起真实中间件跑 §12.2 联调清单，重点是直播开播→PK→送礼→账变、评论→通知红点、举报→下架。
+2. 补两个缺口单测：`NotificationServiceImplTest`、`PeopleUserMyVideoServiceImplTest`。
+3. 按 §8 开工 P3：看板 → 用户管理 → 操作日志 → 番剧详情 → 推荐增强。
+
+---
+
+## 附录 A — 关键文件索引（当前实际路径）
 
 ```text
-bankend/BiliPlus/src/main/java/com/biliplus/
-  controller/user/LiveController.java
-  controller/user/PeopleUserController.java
-  controller/user/VideoController.java
-  controller/user/InteractionController.java
-  controller/user/CommentController.java
-  controller/user/DanmakuController.java
-  controller/admin/AdminVideoController.java
-  controller/admin/AdminLiveController.java
-  controller/admin/AdminGiftController.java
-  controller/admin/AdminUserController.java
-  service/Impl/GiftServiceImpl.java
-  service/Impl/LivePkServiceImpl.java
-  service/Impl/LiveMicServiceImpl.java
-  websocket/LiveWebSocketHandler.java
-  config/WebMvcConfiguration.java
+bankend/BiliPlus/
+  sql/biliplus.sql                        数据库基线（37 表，含 P0–P2 全部新表）
+  .env.template                           后端环境变量模板（.env 不入库）
+  src/main/java/com/biliplus/
+    constant/    VideoStatus · WalletTx · Notify · ReportTarget
+    controller/user/   LiveController · WalletController · NotificationController
+                       PlayHistoryController · FavoriteFolderController
+                       DynamicController · ReportController
+                       PeopleUserController · VideoController · InteractionController
+                       CommentController · DanmakuController · AnimeController
+                       UserSettingsController · ChatController
+    controller/admin/  AdminVideoController · AdminLiveController · AdminGiftController
+                       AdminReportController · AdminNotificationController
+                       AdminUserController · AdminBannerController · CategoryController
+    service/Impl/      WalletServiceImpl · NotificationServiceImpl
+                       PlayHistoryServiceImpl · FavoriteFolderServiceImpl
+                       DynamicServiceImpl · ReportServiceImpl · LiveReplayServiceImpl
+                       GiftServiceImpl · LivePkServiceImpl · LiveMicServiceImpl
+                       LiveRoomServiceImpl · PeopleUserServiceImpl · VideoServiceImpl
+                       AdminVideoServiceImpl · CommentServiceImpl · InteractionServiceImpl
+    mapper/            WalletTransactionMapper · RechargeOrderMapper · NotificationMapper
+                       PlayHistoryMapper · FavoriteFolderMapper · DynamicMapper
+                       ReportMapper · LiveReplayMapper · VideoTagMapper …
+    interceptor/       JwtTokenPeopleInterceptor · JwtTokenAdminInterceptor
+    config/            WebMvcConfiguration · WebSocketConfig
+  src/test/java/com/biliplus/service/     15 个 *Test.java（116 用例）
 
-frontend/biliPlus/src/
-  router/index.ts
-  composables/useLocalSettings.ts
-  composables/useLiveSocket.ts
-  views/home/Main/Video/components/DanmakuPlayer.vue
-  views/home/Main/Video/VideoDetail.vue
-  views/setting/components/PlayerSettings.vue
-  views/setting/components/VideoSettings.vue
-  views/live/LiveRoom.vue
-  views/live/LiveStart.vue
-  views/home/Header.vue
+frontend/biliPlus/
+  .env.development · .env.production · .env.local.template
+  src/constants/playerSettings.ts         播放设置冻结契约（设置页与播放器共用）
+  src/utils/env.ts                        WS / OBS / SRS 地址解析
+  src/composables/usePlayerSettings.ts · useVideoProgress.ts · useLocalSettings.ts
+                                          useLiveSocket.ts · useChatSocket.ts
+  src/views/home/Main/Video/components/DanmakuPlayer.vue
+  src/views/home/Main/Video/VideoDetail.vue
+  src/views/setting/components/PlayerSettings.vue · VideoSettings.vue
+  src/views/live/LiveRoom.vue · LiveStart.vue · LiveSquare.vue
+  src/views/notify/NotificationPage.vue
+  src/views/dynamic/DynamicFeed.vue
+  src/views/home/Header.vue               登录/注册弹窗 + 通知红点轮询
+  src/views/login/UserLogin.vue           唯一的独立登录页
+  src/_legacy/                            已隔离的 test / components-test 遗留组件
+  vite.config.ts                          host 0.0.0.0 + /api /ws /images /video-files /srs-live 代理
 
-biliPlusAdmin/src/
-  router/index.ts
-  views/**（审核/分类/轮播/直播/礼物/流水）
+biliPlusAdmin/
+  tsconfig.app.json                       baseUrl/paths（项目引用不继承根配置，必须写在这里）
+  vite.config.ts                          host 0.0.0.0 + 同上代理
+  src/router/index.ts · src/views/components/Aside.vue
+  src/views/Report/ReportManage.vue · Wallet/WalletTx.vue · Notification/NotificationSend.vue
+  src/views/Video/VideoShenHe.vue · Live/LiveManage.vue · Gift/GiftManage.vue …
+  src/_legacy/About.vue                   已隔离的分片上传演示页
 
-biliplus.sql
-bankend/BiliPlus/sql/live_full.sql
+README.md                                 项目用法与局域网联调说明
+UPGRADE_PLAN.md                           本文档
 ```
 
 ## 附录 B — 名词与状态约定
@@ -1343,4 +1438,63 @@ DPlayer 1.25 只把 `danmaku.opacity` / `unlimited` 透传到弹幕实例，**�
 | 前端类型检查 | `frontend/biliPlus` 的 `npm run type-check`（vue-tsc）在改造前就存在大量历史报错，本期以 `npm run build` 为准；`biliPlusAdmin` 的 `npm run build` 已含 vue-tsc 且通过 |
 | 回放转码 | `live_replay.status` 预留「转码中」，本期直接置为可用，未接转码任务 |
 | 未在浏览器实测 | 本轮只做了编译、单测与构建验证，未启动 MySQL/Redis/SRS 跑端到端冒烟，§12.2 的联调清单仍需人工过一遍 |
- 实现过程中若接口或表结构必须调整，请在对应章节追加「变更记录」小节，保持契约可追溯。
+
+### C.12 SQL 基线合并与路径变更
+
+实施过程中曾按 §4 约定输出过 `bankend/BiliPlus/sql/upgrade_p1_wallet.sql`、`upgrade_p1_replay.sql`、
+`upgrade_p2_community.sql`、`fix_media_url_to_relative.sql` 四份增量脚本。**后续已全部并入
+`bankend/BiliPlus/sql/biliplus.sql` 并从仓库删除**，根目录的 `biliplus.sql` 也随之移除。
+
+- 基线现为单文件，**37 张表**，已包含 `wallet_transaction`、`recharge_order`、`live_replay`、
+  `play_history`、`notification`、`report`、`favorite_folder`、`dynamic`、`dynamic_like`，
+  以及 `video_favorite.folder_id` 列
+- 本文档 §4 / §7.1 / §14 / 附录 A 中凡是引用 `upgrade_p*.sql` 或根目录 `biliplus.sql` 的表述，
+  一律以 `bankend/BiliPlus/sql/biliplus.sql` 为准
+- 新装环境只需导入这一个文件，不再需要按顺序执行增量脚本
+
+### C.13 媒体地址相对化与局域网联调
+
+`UploadController` / `AdminUploadController` 原先用 `app.external-url`（默认 `http://localhost:8081`）
+拼接 `video_url` / `cover_url` 并**落库**，导致他人机器访问时封面裂图、视频无法播放。
+
+- 现改为只存 `access-prefix + 文件名`（如 `/images/xxx.jpg`、`/video-files/xxx.mp4`），
+  由当前站点同源解析
+- 前台与管理端 `vite.config.ts` 均绑定 `host: '0.0.0.0'`，并代理
+  `/api`、`/ws`、`/images`、`/video-files`、`/srs-live` 到本机后端与 SRS
+- SRS 代理 target 固定 `http://127.0.0.1:8080`：实测 SRS 未监听 IPv6 回环（`[::1]:8080` 不通），
+  用 `localhost` 会让 Node 先试 IPv6 再回退，多花约 280ms
+- 实测结论：Docker Desktop + WSL2 下 SRS 端口（1935/8080/1985）**只对本机可达**，
+  局域网 IP 连不上；因此拉流必须走 Vite 代理，且**朋友无法直接用 OBS 推流**（除非另行暴露 1935）
+
+### C.14 登录/注册空壳清理
+
+- `frontend/biliPlus/src/views/login/Register.vue` 与 `views/login/Settings.vue` 均为 **96 字节空壳**，
+  已删除；`login/` 目录现在只剩 `UserLogin.vue`
+- 注册功能实际实现在 `Header.vue` 的内置弹窗（邮箱 + 密码 + 图片验证码 + 邮箱验证码），
+  独立注册页从未承载过逻辑
+- 配套改动：删除 `/register` 路由；登录页「立即注册」改跳 `/?register=1`；
+  `Header.vue` 的 `onMounted` 检测该 query 后自动弹出注册弹窗；
+  `App.vue` 的 `hideChromePaths` 移除 `/register`（注册发生在首页，必须显示顶栏）
+- 管理端 `biliPlusAdmin/src/views/components/Main.vue` 虽只有 125 字节，但它是
+  `<router-view>` 布局容器，被 `Home.vue` 引用，**不是空壳，予以保留**
+
+### C.15 文档收敛
+
+- `FIX_PLAN.md`、`DEV_PLAN.md`、`LIVE_PLAN.md`、`LIVE_FULL_PLAN.md` 已删除，
+  本文档成为升级契约的唯一来源
+- `README.md` 已按项目实况重写：功能清单（含「尚未实现」的 P3 项）、启动步骤、
+  端口一览、环境变量、局域网联调说明、项目结构与 API 约定
+
+### C.16 与原计划的测试类命名差异
+
+§12.1 原计划的 `PeopleUserMyVideoServiceImplTest`、`NotificationServiceImplTest`、
+`AdminStatsServiceImplTest`、`AdminUserServiceImplTest` **均未按该命名落地**：
+
+- 稿件编辑/重提/软删的接口已实现（`PeopleUserServiceImpl.updateMyVideo` 等），但没有独立测试类
+- 通知的触发路径已由 `CommentServiceImplTest`、`AdminVideoServiceImplTest` 通过 mock 断言，
+  `NotificationServiceImpl` 自身的分页/已读逻辑未单独覆盖
+- `AdminStats*`、`AdminUser*` 属于 P3，尚未开工
+
+实际落地的测试类清单见 §12.1。
+
+---

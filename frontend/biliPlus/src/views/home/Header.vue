@@ -642,6 +642,11 @@ onMounted(() => {
   if (userStore.userInfo?.id || localStorage.getItem('token')) {
     startUnreadPolling()
   }
+  // 登录页「立即注册」跳到 /?register=1，这里自动弹出注册弹窗
+  // （注册逻辑本就在 Header 内，独立注册页是空壳，已删除）
+  if (route.query.register === '1') {
+    openRegisterDialog()
+  }
 });
 
 onUnmounted(() => {
