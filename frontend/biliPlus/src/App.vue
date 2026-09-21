@@ -9,8 +9,9 @@ useTheme()
 
 const route = useRoute()
 
-// 登录/注册不显示顶栏与底部导航
-const hideChromePaths = ['/login', '/register']
+// 登录页不显示顶栏与底部导航
+// 注册走 Header 内的弹窗（/?register=1），因此注册场景必须显示顶栏
+const hideChromePaths = ['/login']
 const showChrome = computed(() => !hideChromePaths.includes(route.path))
 </script>
 
