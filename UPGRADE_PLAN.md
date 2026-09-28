@@ -5,6 +5,7 @@
 > **仓库**：`bankend/BiliPlus` · `frontend/biliPlus` · `biliPlusAdmin`
 > **计划日期**：2026-09-13 · **实施回写**：见文末附录 C
 > **前置文档**：`FIX_PLAN.md` / `DEV_PLAN.md` / `LIVE_PLAN.md` / `LIVE_FULL_PLAN.md` 均已删除；本文档是升级契约的唯一来源，项目用法见 `README.md`
+> **毕业设计**：若本项目用作毕设，整体定位、一年期路线图、用户与场景需求见 **`GRADUATION_DESIGN.md`**；本文档 §15 的排期已被其取代
 > **性质**：在现有 MVP 之上**增量升级**，不推翻已实现模块
 
 ## 实施状态速览
@@ -14,7 +15,7 @@
 | **P0** | 体验收口与工程债 | ✅ 已完成 | 播放设置真正生效、env 配置外置、稿件编辑/重提/软删 + 标签落库、分享、清理 `/test` 路由 |
 | **P1** | 直播闭环与资金流水 | ✅ 已完成 | 主播发起 PK + 到期自动结束、连麦信令（RTC 未配置时明确降级）、充值订单与钱包账变、直播回放 |
 | **P2** | 社区闭环 | ✅ 已完成 | 通知中心、播放历史、收藏夹、动态 Feed、举报治理（成立联动下架/软删） |
-| **P3** | 运营与体验增强 | ⬜ 未开始 | 看板、用户管理、操作日志、番剧详情页、推荐增强、移动端优化 |
+| **P3** | 运营与体验增强 | 🔶 部分完成 | 看板、用户管理（含封禁生效）、操作日志已实现；番剧详情/推荐增强/移动端待做 |
 
 **当前验证结果**
 
@@ -47,7 +48,7 @@ NexusPlay（BiliPlus）已具备 B 站风格视频社区主链路：
 1. **半成品**：播放设置不生效、连麦无媒体流、PK 缺主播发起、通知空壳、分享/稿件管理/番剧详情未完成  
 2. **资金不合规**：充值为测试直充，无账变流水，无法对账  
 3. **社区闭环缺失**：无播放历史、通知、动态、举报治理  
-4. **运营能力弱**：管理端无用户管理、数据看板、RBAC  
+4. **运营能力弱**：管理端 RBAC 未分级（看板/用户管理/操作日志已落地）  
 5. **环境债**：WS/OBS/CORS/存储路径硬编码，生产密钥默认值入库  
 
 ### 1.2 本期目标
@@ -113,7 +114,7 @@ NexusPlay（BiliPlus）已具备 B 站风格视频社区主链路：
 | 无 `wallet_transaction` / 充值订单 | 合规债 | P1 |
 | 无直播回放 | 功能缺 | P1 |
 | 无通知/历史/动态/举报 | 社区缺 | P2 |
-| 管理端无用户/看板/权限 | 运营缺 | P3 |
+| 管理端无用户/看板/权限 | 运营缺 | P3（用户/看板已补，RBAC 待做） |
 | 推荐算法过弱、番剧详情缺 | 体验缺 | P2 / P3 |
 
 ### 2.3 数据层现状
@@ -210,7 +211,7 @@ app:
 | **P0** | 体验收口与工程债 | ✅ 已完成 | 3–4 天 | 设置生效、配置外置、稿件管理、分享、清 test |
 | **P1** | 直播闭环与资金流水 | ✅ 已完成 | 4–5 天 | PK 发起、连麦媒体、账变订单、回放 |
 | **P2** | 社区闭环 | ✅ 已完成 | 4–5 天 | 通知、历史、收藏夹、动态、举报 |
-| **P3** | 运营与体验增强 | ⬜ 未开始 | 3–4 天 | 看板、用户管理、操作日志、番剧详情、推荐 |
+| **P3** | 运营与体验增强 | 🔶 部分完成 | 3–4 天 | 看板、用户管理、操作日志已实现；番剧详情/推荐待做 |
 | **合计** | — | P0–P2 已交付 | **约 14–18 人日** | 两人可前后端并行压缩至 ~10 人日 |
 
 执行约定（`DEV_PLAN.md` 已删除，约定沿用至今）：
@@ -864,8 +865,9 @@ CREATE TABLE IF NOT EXISTS `dynamic_like` (
 **验收**
 
 1. 用户可提交举报；重复举报提示  
-2. 管理端处理后 status 变更；成立时目标不可见  
-3. 操作写入 `admin_operation_log`（见 P3，P2 可先 remark）  
+2. 管理端处理成立后联动：视频下架 / 评论软删 / 弹幕删除 / 用户禁言 3 天 / 直播间强制下播，并扣作者信用分  
+3. 操作写入 `admin_operation_log`  
+4. C 端举报入口覆盖：视频、评论、弹幕（按 ID）、用户、直播间
 
 **测试**
 
@@ -886,10 +888,13 @@ CREATE TABLE IF NOT EXISTS `dynamic_like` (
 
 ## 8. P3 — 运营与体验增强
 
-> **状态：⬜ 未开始。** 本节仍为待实施计划，代码中尚无对应 Controller / 页面。
-> 与 P0–P2 的已实现部分并列保留，作为下一阶段的契约。
+> **状态：🔶 部分完成。** §8.1 数据看板、§8.2 用户管理、§8.3 操作日志**已实现**；
+> §8.4 番剧详情页、§8.5 推荐增强、§8.6 移动端体验**尚未开始**。
 
 ### 8.1 管理端数据看板
+
+> **✅ 已实现**：`GET /admin/stats/overview`、`GET /admin/stats/trend?days=N`；
+> 前端 `biliPlusAdmin/src/views/Dashboard/Dashboard.vue`，`/Home` 默认路由即看板。
 
 **接口**
 
@@ -911,6 +916,9 @@ CREATE TABLE IF NOT EXISTS `dynamic_like` (
 ---
 
 ### 8.2 用户管理
+
+> **✅ 已实现**：`/admin/users` 的 list / detail / ban / unban / mute / unmute / role / penalties
+> （`AdminMemberController` + `AdminMemberServiceImpl` + 单测）。
 
 **接口**
 
@@ -942,6 +950,10 @@ CREATE TABLE IF NOT EXISTS `dynamic_like` (
 ---
 
 ### 8.3 管理端操作日志
+
+> **✅ 已实现**：`admin_operation_log` 表 + `AdminOperationLogService`（旁路写入）+ `GET /admin/operation-logs` 只读列表。
+> 埋点覆盖：视频审核、举报处理、封禁/禁言（含信用分自动处罚）、角色调整、敏感词 CRUD 与复核、强制下播、系统通知广播。
+> IP 由 `JwtTokenAdminInterceptor` 注入 `AdminContext`（兼容 `X-Forwarded-For`）。
 
 ```sql
 CREATE TABLE IF NOT EXISTS `admin_operation_log` (
@@ -1060,10 +1072,10 @@ score = w1 * 热度(播放+点赞*3+评论*5)
 | P1 | GET | `/admin/live/wallet/transactions` | 账变对账查询 | ✅ |
 | P2 | GET/POST | `/admin/reports`、`/admin/reports/{id}/handle` | 举报列表与处理 | ✅ |
 | P2 | POST | `/admin/notifications` | 系统通知广播 | ✅ |
-| P3 | GET | `/admin/stats/overview`、`/trend` | 看板 | ⬜ |
-| P3 | GET/POST | `/admin/users*` | 用户管理 | ⬜ |
+| P3 | GET | `/admin/stats/overview`、`/trend` | 看板 | ✅ |
+| P3 | GET/POST | `/admin/users*` | 用户管理（含禁言/封禁/角色） | ✅ |
 | P3 | POST | `/admin/user/register` | 管理员注册（Controller 仍是 TODO） | ⬜ |
-| P3 | GET | `/admin/operation-logs` | 操作日志 | ⬜ |
+| P3 | GET | `/admin/operation-logs` | 操作日志 | ✅ |
 
 **公开 GET 放行**（以 `JwtTokenPeopleInterceptor` 实际代码为准）：
 
@@ -1100,7 +1112,7 @@ score = w1 * 热度(播放+点赞*3+评论*5)
 | `/dynamic` | `views/dynamic/DynamicFeed.vue` | P2 | — | ✅ |
 | `/live` | `views/live/LiveSquare.vue`（含「直播回放」Tab） | P1 | — | ✅ |
 | `/anime/:id` | `views/anime/AnimeDetail.vue` | P3 | — | ⬜ 尚未创建 |
-| `/admin` 看板 | Admin `Dashboard.vue` | P3 | admin token | ⬜ 尚未创建 |
+| `/admin` 看板 | Admin `Dashboard.vue` | P3 | admin token | ✅ |
 | ~~`/test` `/testTwo`~~ | 已删除，组件移入 `src/_legacy/` | P0 | — | ✅ |
 | ~~`/register`~~ | 空壳已删除，注册走 Header 弹窗（`/?register=1`） | — | — | ✅ |
 | ~~`/about`（管理端）~~ | 空壳已删除，移入 `biliPlusAdmin/src/_legacy/` | — | — | ✅ |
@@ -1120,9 +1132,9 @@ score = w1 * 热度(播放+点赞*3+评论*5)
 打赏流水          /Home/GiftRecord      ✅ 已有
 钱包账变          /Home/WalletTx        ✅ P1 已实现
 系统通知          /Home/Notification    ✅ P2 已实现（原计划未列入菜单，实现时补入）
-首页看板          /Home/Dashboard       ⬜ P3 未实现
-用户管理          /Home/User            ⬜ P3 未实现
-操作日志          /Home/OperationLog    ⬜ P3 未实现
+首页看板          /Home/Dashboard       ✅ 已实现
+用户管理          /Home/User            ✅ 已实现
+操作日志          /Home/OperationLog    ✅ 已实现
 ```
 
 ---
