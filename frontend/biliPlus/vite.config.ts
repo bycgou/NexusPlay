@@ -76,22 +76,28 @@ export default defineConfig(({ mode }) => ({
         include: ['emoji-mart-vue-fast'],
     },
     build: {
-        // 代码分割配置
+        // 不要把 element-plus 和 vue 拆到不同 chunk：会循环初始化导致白屏
+        // （Cannot access 'xx' before initialization）
         rollupOptions: {
             output: {
-                manualChunks: {
-                    // 将大型依赖单独打包
-                    'element-plus': ['element-plus'],
-                    'vue-vendor': ['vue', 'vue-router', 'pinia'],
-                    'video-player': ['video.js', 'dplayer', 'hls.js', 'flv.js'],
+                manualChunks(id) {
+                    if (
+                        id.includes('video.js') ||
+                        id.includes('dplayer') ||
+                        id.includes('hls.js') ||
+                        id.includes('flv.js') ||
+                        id.includes('svgaplayerweb')
+                    ) {
+                        return 'video-player'
+                    }
+                    if (id.includes('node_modules')) {
+                        return 'vendor'
+                    }
                 },
             },
         },
-        // 启用 CSS 代码分割
         cssCodeSplit: true,
-        // 设置 chunk 大小警告阈值
-        chunkSizeWarningLimit: 600,
-        // 生产环境移除 console
+        chunkSizeWarningLimit: 1200,
         minify: 'esbuild',
         target: 'es2015',
     },
