@@ -12,6 +12,7 @@ B 站风格的视频社区：投稿与弹幕播放、评论关注、站内通知
 | `bankend/BiliPlus/sql/biliplus.sql` | 数据库基线，44 张表，含推荐池与内容治理表 |
 
 ---
+![Uploading image.png…]()
 
 ## 功能
 
