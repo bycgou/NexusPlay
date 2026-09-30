@@ -95,7 +95,7 @@ Copy-Item .env.template .env     # Windows；Linux/macOS 用 cp .env.template .e
 mvn spring-boot:run              # 监听 :8081
 ```
 
-项目已引入 `spring-dotenv`，`bankend/BiliPlus/.env` 会在启动时自动加载。`.env` 已被 git 忽略，**不要提交真实密钥**。
+项目已引入 `spring-dotenv`，`bankend/BiliPlus/.env` 会在启动时自动加载。
 
 关键环境变量（完整列表见 `.env.template`）：
 
