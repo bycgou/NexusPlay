@@ -52,8 +52,6 @@ B 站风格的视频社区：投稿与弹幕播放、评论关注、站内通知
 - **信用分与处置**：违规扣分，低于阈值自动禁言；封禁 / 禁言可设时长
 - **事件与审计**：`event_log` 记录关键业务事件，`admin_operation_log` 记录管理端操作
 
-安全评估与修复过程文档见仓库根目录：`SECURITY_ASSESSMENT.md`、`SECURITY_FIX_PLAN.md`、`SECURITY_MODIFICATION_PLAN.md`、`PENTEST_REPORT.md`。
-
 ---
 
 ## 技术栈
