@@ -48,52 +48,91 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="login-container">
-    <h2 class="title">BiliPlus 管理后台</h2>
-    <el-col>
-      <el-input
-          v-model="username"
-          placeholder="请输入管理员账号"
-          class="input-item"
-          clearable
-          @keyup.enter="handleLogin"
-      />
-      <el-input
-          v-model="password"
-          type="password"
-          placeholder="请输入密码"
-          class="input-item"
-          show-password
-          clearable
-          @keyup.enter="handleLogin"
-      />
-      <el-button
-          type="primary"
-          @click="handleLogin"
-          class="login-btn"
-          :loading="loading"
-      >
-        登录
-      </el-button>
-    </el-col>
+  <div class="login-page">
+    <div class="login-container">
+      <div class="brand-row">
+        <div class="brand-logo">N</div>
+        <div>
+          <h2 class="title">NexusPlay 管理后台</h2>
+          <p class="sub">内容治理 · 用户运营 · 资金对账</p>
+        </div>
+      </div>
+      <el-col>
+        <el-input
+            v-model="username"
+            placeholder="请输入管理员账号"
+            class="input-item"
+            clearable
+            @keyup.enter="handleLogin"
+        />
+        <el-input
+            v-model="password"
+            type="password"
+            placeholder="请输入密码"
+            class="input-item"
+            show-password
+            clearable
+            @keyup.enter="handleLogin"
+        />
+        <el-button
+            type="primary"
+            @click="handleLogin"
+            class="login-btn"
+            :loading="loading"
+        >
+          登录
+        </el-button>
+      </el-col>
+    </div>
   </div>
 </template>
 
 <style scoped>
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(1000px 520px at 12% -8%, rgba(37, 99, 235, 0.16), transparent 60%),
+    radial-gradient(800px 480px at 108% 108%, rgba(96, 165, 250, 0.18), transparent 55%),
+    #f0f6ff;
+}
 .login-container {
-  width: 360px;
-  margin: 100px auto;
-  padding: 28px 24px;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  width: 380px;
+  padding: 32px 28px;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(37, 99, 235, 0.12);
   background: #fff;
+  border: 1px solid #e8eef7;
+}
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.brand-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2563EB 0%, #60A5FA 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .title {
-  text-align: center;
-  margin: 0 0 20px;
-  font-size: 20px;
-  color: #303133;
+  margin: 0;
+  font-size: 18px;
+  color: #1e293b;
+}
+.sub {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #94a3b8;
 }
 .input-item {
   width: 100%;

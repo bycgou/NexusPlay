@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getGiftList, createGift, updateGift, deleteGift, type Gift } from '@/api/live'
@@ -131,7 +131,7 @@ onMounted(loadList)
       </el-table-column>
     </el-table>
 
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="480px">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="480px" append-to-body>
       <el-form label-width="90px">
         <el-form-item label="名称" required>
           <el-input v-model="form.name" maxlength="50" />

@@ -2,14 +2,20 @@
 <template>
   <div class="chat-input">
     <div class="toolbar">
-      <button type="button" class="tool-btn" title="发送图片" @click="onInsertImage">
+      <button
+        type="button"
+        class="tool-btn"
+        title="发送图片"
+        :disabled="disabled || imageUploading"
+        @click="onInsertImage"
+      >
         <el-icon size="18"><Picture /></el-icon>
       </button>
       <button type="button" class="tool-btn" title="表情" @click="toggleEmojiPicker">😊</button>
       <button type="button" class="tool-btn" title="视频通话" @click="startVideoCall">
         <el-icon size="18"><VideoCamera /></el-icon>
       </button>
-      <span class="hint">Enter 发送 · Shift+Enter 换行</span>
+      <span class="hint">{{ imageUploading ? '图片上传中...' : 'Enter 发送 · Shift+Enter 换行' }}</span>
     </div>
 
     <div class="input-row">
@@ -33,13 +39,23 @@
     <div v-if="showEmojiPicker" class="emoji-panel">
       <EmojiPicker :visible="true" @pick="handleEmojiPick" />
     </div>
+
+    <input
+      ref="imageInputRef"
+      type="file"
+      accept="image/*"
+      class="hidden-input"
+      @change="handleImageChange"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import { ElMessage } from 'element-plus'
 import { Picture, VideoCamera } from '@element-plus/icons-vue'
 import EmojiPicker from '@/views/components/EmojiPicker.vue'
+import request from '@/utils/request'
 
 defineProps({
   disabled: Boolean,
@@ -50,6 +66,10 @@ const emit = defineEmits(['send', 'insert-image', 'start-video-call'])
 const inputContent = ref('')
 const showEmojiPicker = ref(false)
 const textareaRef = ref(null)
+const imageInputRef = ref(null)
+const imageUploading = ref(false)
+
+const MAX_IMAGE_MB = 5
 
 const toggleEmojiPicker = () => {
   showEmojiPicker.value = !showEmojiPicker.value
@@ -70,8 +90,42 @@ const handleSend = () => {
 }
 
 const onInsertImage = () => {
-  const url = prompt('请输入图片 URL')
-  if (url) emit('insert-image', url)
+  if (imageUploading.value) return
+  imageInputRef.value?.click()
+}
+
+const handleImageChange = async (e) => {
+  const el = e.target
+  const file = el.files?.[0]
+  el.value = ''
+  if (!file) return
+
+  if (!file.type.startsWith('image/')) {
+    ElMessage.error('请选择图片文件')
+    return
+  }
+  if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
+    ElMessage.error(`图片不能超过 ${MAX_IMAGE_MB}MB`)
+    return
+  }
+
+  imageUploading.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await request.post('/pp/upload/cover', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    if ((res?.code === 1 || res?.code === 200) && res?.data) {
+      emit('insert-image', res.data)
+    } else {
+      throw new Error(res?.msg || '图片上传失败')
+    }
+  } catch (err) {
+    ElMessage.error(err?.message || '图片上传失败')
+  } finally {
+    imageUploading.value = false
+  }
 }
 
 const startVideoCall = () => emit('start-video-call')
@@ -109,7 +163,16 @@ const startVideoCall = () => emit('start-video-call')
 
 .tool-btn:hover {
   background: #f0f2f5;
-  color: #6c5ce7;
+  color: #2563EB;
+}
+
+.tool-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.hidden-input {
+  display: none;
 }
 
 .hint {
@@ -142,9 +205,9 @@ const startVideoCall = () => emit('start-video-call')
 }
 
 .input:focus {
-  border-color: #6c5ce7;
+  border-color: #2563EB;
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.12);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
 .input:disabled {
@@ -158,7 +221,7 @@ const startVideoCall = () => emit('start-video-call')
   padding: 0 18px;
   border: none;
   border-radius: 20px;
-  background: #6c5ce7;
+  background: #2563EB;
   color: #fff;
   font-size: 14px;
   cursor: pointer;
@@ -171,7 +234,7 @@ const startVideoCall = () => emit('start-video-call')
 }
 
 .send-btn:not(:disabled):hover {
-  background: #5a4bd1;
+  background: #1D4ED8;
 }
 
 .emoji-panel {

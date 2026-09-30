@@ -1,6 +1,6 @@
 server:
   address: 0.0.0.0
-  port: ${SERVER_PORT:8080}
+  port: ${SERVER_PORT:8081}
 
 app:
   external-url: ${EXTERNAL_URL:http://localhost:8081}
@@ -72,7 +72,7 @@ video:
   upload:
     base-path: ${VIDEO_UPLOAD_PATH:/www/wwwroot/videos/}      # 👈 视频存储目录（与宝塔一致）
     temp-path: ${VIDEO_TEMP_PATH:/www/wwwroot/videos/temp/}   # 分片临时目录
-    access-prefix: /videos/                                   # 前端访问前缀（对应 Nginx /videos/）
+    access-prefix: /video-files/                              # 与 WebMvcConfiguration / 前端代理一致
 
 image:
   upload:

@@ -5,6 +5,8 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
@@ -17,4 +19,10 @@ public interface DanmakuMapper {
 
     @Select("select * from danmaku where video_id = #{videoId} and status = 1 order by time asc limit #{maxCount}")
     List<Danmaku> getDanmakuById(@Param("videoId") Long videoId, @Param("maxCount") int maxCount);
+
+    @Select("select * from danmaku where id = #{id}")
+    Danmaku selectById(@Param("id") Long id);
+
+    @Update("update danmaku set status = 0 where id = #{id}")
+    int softDelete(@Param("id") Long id);
 }

@@ -5,40 +5,22 @@
 <!--    <el-button types="text" @click="handleBackClick">← 返回上一页</el-button>-->
 
     <!-- 顶部：标题 + 作者 -->
-    <div class="header">
-      <div class="title-section">
-        <h1 class="video-title">{{ currentVideo.title }}</h1>
-        <div class="video-meta">
-          <span>{{ formatCount(currentVideo.playCount) }} 播放</span>
-          <span>•</span>
-          <span>{{ formatDate(currentVideo.publishTime) }}</span>
-        </div>
-      </div>
-
-      <div class="author-info">
-        <div class="author-row">
-          <el-avatar :src="currentVideo.author.avatar" size="small" />
-          <span class="author-name">{{ currentVideo.author.name }}</span>
-        </div>
-        <span class="fans-count">{{ formatCount(currentVideo.author.fansCount) }} 粉丝</span>
-        <el-button type="primary" size="small" @click="goTomessage">
-          私信
-        </el-button>
-        <el-button
-            size="small"
-            @click="handleFollow"
-            :type="followed ? 'default' : 'primary'"
-            :class="{ 'follow-success': followAnimating }"
-        >
-          {{ followed ? '已关注' : '+ 关注' }}
-        </el-button>
-      </div>
-    </div>
-
     <!-- 主内容区 -->
-    <el-row :gutter="24">
-      <!-- 左侧：播放器 + 互动 + 评论 -->
-      <el-col :xs="24" :sm="24" :md="16" :lg="17">
+    <el-row :gutter="16">
+      <!-- 左侧：标题 + 播放器 + 互动 + 评论 -->
+      <el-col :xs="24" :sm="24" :md="18" :lg="18">
+        <!-- 标题（与右侧作者卡片同一行起点） -->
+        <div class="header">
+          <div class="title-section">
+            <h1 class="video-title">{{ currentVideo.title }}</h1>
+            <div class="video-meta">
+              <span>{{ formatCount(currentVideo.playCount) }} 播放</span>
+              <span>•</span>
+              <span>{{ formatDate(currentVideo.publishTime) }}</span>
+            </div>
+          </div>
+        </div>
+
         <!-- 弹幕播放器 -->
         <DanmakuPlayer
             ref="playerRef"
@@ -85,14 +67,53 @@
             <el-icon><Warning /></el-icon>
             <span>举报</span>
           </el-button>
+          <el-button type="text" class="report-btn" @click="danmakuReportVisible = true">
+            <el-icon><Warning /></el-icon>
+            <span>举报弹幕</span>
+          </el-button>
         </div>
 
         <!-- 评论区 -->
         <CommentSection :video-id="videoId" />
       </el-col>
 
-      <!-- 右侧：推荐视频 -->
-      <el-col :xs="0" :sm="0" :md="8" :lg="7">
+      <!-- 右侧：作者信息 + 推荐视频 -->
+      <el-col :xs="0" :sm="0" :md="6" :lg="6">
+        <!-- 作者卡片（B 站式：头像在左） -->
+        <div class="author-card">
+          <el-avatar
+            :src="currentVideo.author.avatar"
+            :size="56"
+            class="author-card-avatar"
+            @click="goToAuthorHome"
+          />
+          <div class="author-card-body">
+            <div class="author-card-top">
+              <span
+                class="author-name is-link"
+                @click="goToAuthorHome"
+              >{{ currentVideo.author.name }}</span>
+            </div>
+            <p class="author-signature" :title="currentVideo.author.signature">
+              {{ currentVideo.author.signature || '这个人很懒，什么都没写' }}
+            </p>
+            <div class="author-actions">
+              <el-button size="small" class="msg-btn" @click="goTomessage">
+                私信
+              </el-button>
+              <el-button
+                  size="small"
+                  class="follow-btn"
+                  @click="handleFollow"
+                  :type="followed ? 'default' : 'primary'"
+                  :class="{ 'follow-success': followAnimating }"
+              >
+                {{ followed ? '已关注' : '+ 关注' }} {{ formatCount(currentVideo.author.fansCount) }}
+              </el-button>
+            </div>
+          </div>
+        </div>
+
         <RecommendSidebar :videos="recommendVideos" @video-click="handleRecommendClick" />
       </el-col>
     </el-row>
@@ -145,6 +166,11 @@
         <el-button type="primary" :loading="reportSubmitting" @click="submitReportAction">提交举报</el-button>
       </template>
     </el-dialog>
+    <!-- 举报弹幕：列表点选，无需用户知道 ID -->
+    <DanmakuReportDialog
+        v-model="danmakuReportVisible"
+        :video-id="videoId"
+    />
   </div>
 </template>
 
@@ -157,11 +183,14 @@ import { ElMessage } from 'element-plus'
 import DanmakuPlayer from '@/views/home/Main/Video/components/DanmakuPlayer.vue'
 import CommentSection from '@/views/home/Main/Video/comment/CommentSection.vue'
 import RecommendSidebar from '@/views/home/Main/Video/components/RecommendSidebar.vue'
+import ReportDialog from '@/components/ReportDialog.vue'
+import DanmakuReportDialog from '@/components/DanmakuReportDialog.vue'
 
 // API
 import { getVideoDetail, getUserInfo, getRecommendVideos, shareVideo } from '@/api/video.js'
 import { toggleLike, toggleFavorite, toggleFollow, getVideoInteractionStatus, getUserInteractionStatus } from '@/api/interaction'
 import { useUserStore } from '@/store/user'
+import { useAuthPrompt } from '@/composables/useAuthPrompt'
 import { usePlayerSettings } from '@/composables/usePlayerSettings'
 import {
   clearVideoProgress,
@@ -176,8 +205,19 @@ import { REPORT_REASONS, REPORT_TARGET, submitReport } from '@/api/report'
 // 路由
 const route = useRoute()
 const router = useRouter()
+const authPrompt = useAuthPrompt()
 const userStore = useUserStore()
 const { settings: playerSettings } = usePlayerSettings()
+
+// 跳转作者主页
+const goToAuthorHome = () => {
+  const authorId = currentVideo.value.author?.authorId
+  if (!authorId) {
+    ElMessage.warning('作者信息未加载完成')
+    return
+  }
+  router.push(`/user/${authorId}`)
+}
 
 // 私信
 const goTomessage=()=>{
@@ -211,6 +251,7 @@ const currentVideo = ref({
     authorId: null,
     name: '',
     avatar: '',
+    signature: '',
     fansCount: 0
   }
 })
@@ -285,6 +326,7 @@ const loadVideoDetail = async () => {
         authorId: videoData.userId,
         name: videoData.nickname || `用户${videoData.userId}`,
         avatar: videoData.avatar || `https://picsum.photos/100/100?random=${videoData.userId}`,
+        signature: '',
         fansCount: 0
       }
     }
@@ -296,6 +338,7 @@ const loadVideoDetail = async () => {
         if (userRes.code === 1 && userRes.data) {
           currentVideo.value.author.name = userRes.data.nickname || currentVideo.value.author.name
           currentVideo.value.author.avatar = userRes.data.avatar || currentVideo.value.author.avatar
+          currentVideo.value.author.signature = userRes.data.signature || ''
           currentVideo.value.author.fansCount = userRes.data.fansCount || 0
           // 兜底：若视频详情缺 userId，用用户接口返回的 id
           if (!currentVideo.value.author.authorId && userRes.data.id) {
@@ -444,7 +487,7 @@ const handleRecommendClick = (item) => {
 const handleLike = async () => {
   if (!userStore.userInfo?.id) {
     ElMessage.warning('请先登录')
-    router.push('/login')
+    authPrompt.openLogin()
     return
   }
   try {
@@ -472,7 +515,7 @@ const handleLike = async () => {
 const handleCollect = async () => {
   if (!userStore.userInfo?.id) {
     ElMessage.warning('请先登录')
-    router.push('/login')
+    authPrompt.openLogin()
     return
   }
   // 已收藏则直接取消；未收藏先让用户选收藏夹
@@ -551,11 +594,12 @@ const createAndPickFolder = async () => {
 const reportVisible = ref(false)
 const reportSubmitting = ref(false)
 const reportForm = ref({ reason: 1, detail: '' })
+const danmakuReportVisible = ref(false)
 
 const openReport = () => {
   if (!userStore.userInfo?.id) {
     ElMessage.warning('请先登录')
-    router.push('/login')
+    authPrompt.openLogin()
     return
   }
   reportForm.value = { reason: 1, detail: '' }
@@ -632,7 +676,7 @@ const handleShare = async () => {
 const handleFollow = async () => {
   if (!userStore.userInfo?.id) {
     ElMessage.warning('请先登录')
-    router.push('/login')
+    authPrompt.openLogin()
     return
   }
   const authorId = currentVideo.value.author?.authorId
@@ -670,9 +714,9 @@ onMounted(() => {
 <style scoped>
 .video-detail-container {
   background-color: var(--paper);
-  padding: var(--space-lg) var(--space-xl);
+  padding: var(--space-md);
   min-height: calc(100vh - 60px);
-  max-width: 1400px;
+  max-width: 1680px;
   margin: 0 auto;
 }
 
@@ -681,77 +725,131 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: var(--space-lg);
-  padding-bottom: var(--space-md);
-  border-bottom: 1px solid var(--line);
+  gap: var(--space-lg);
+  margin-bottom: var(--space-sm);
 }
 
 .title-section {
   flex: 1;
-  margin-right: var(--space-lg);
+  min-width: 0;
 }
 
 .video-title {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
-  margin: 0 0 var(--space-sm);
+  margin: 0 0 4px;
   color: var(--ink);
-  line-height: 1.4;
+  line-height: 1.35;
   letter-spacing: -0.3px;
 }
 
 .video-meta {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--mist);
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  line-height: 1.4;
 }
 
 .video-meta span {
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
+  gap: 4px;
+  white-space: nowrap;
 }
 
-.author-info {
+/* 作者卡片：头像在左，信息在右，宽度与推荐栏一致 */
+.author-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  background: var(--paper-white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+.author-card-avatar {
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.author-card-body {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: var(--space-sm);
-  min-width: 180px;
-  font-size: 14px;
-  color: var(--ink-secondary);
+  gap: 6px;
 }
 
-.author-row {
+.author-card-top {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  gap: 8px;
 }
 
 .author-name {
+  font-size: 15px;
   font-weight: 600;
   color: var(--ink);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.fans-count {
-  color: var(--mist);
+.author-name.is-link {
+  cursor: pointer;
+}
+
+.author-name.is-link:hover {
+  color: var(--brand);
+}
+
+.author-signature {
+  margin: 0;
   font-size: 12px;
+  color: var(--mist);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.author-info .el-button {
+.author-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.author-actions .el-button {
   border-radius: var(--radius-md);
   font-weight: 500;
+  height: 30px;
+  padding: 0 12px;
+  margin-left: 0;
+}
+
+.author-actions .follow-btn {
+  flex: 1;
 }
 
 /* 主内容区 */
 .el-row {
-  margin: 0 calc(-1 * var(--space-md));
+  margin: 0 calc(-1 * var(--space-sm));
+  align-items: flex-start;
 }
 
 .el-col {
-  padding: 0 var(--space-md);
+  padding: 0 var(--space-sm);
+  min-width: 0;
 }
 
 /* 播放器 */
@@ -760,7 +858,7 @@ onMounted(() => {
   overflow: hidden;
   box-shadow: var(--shadow-lg);
   background: #000;
-  margin-bottom: var(--space-lg);
+  margin-bottom: var(--space-md);
 }
 
 /* 续播提示 */
@@ -817,12 +915,12 @@ onMounted(() => {
 .footer-actions {
   display: flex;
   align-items: center;
-  gap: var(--space-xl);
-  padding: var(--space-md) 0;
+  gap: var(--space-md);
   background: var(--paper-white);
+  border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  padding: var(--space-md) var(--space-lg);
-  margin-bottom: var(--space-lg);
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-md);
   box-shadow: var(--shadow-sm);
 }
 
@@ -892,22 +990,34 @@ onMounted(() => {
   .header {
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--space-md);
+    gap: var(--space-sm);
   }
 
-  .author-info {
-    align-items: flex-start;
+  .author-card {
     width: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
+    margin-bottom: var(--space-sm);
+  }
+
+  .author-signature {
+    white-space: normal;
+    -webkit-line-clamp: 3;
+  }
+
+  .author-actions {
+    margin-left: auto;
   }
 
   .title-section {
     margin-right: 0;
+    width: 100%;
   }
 
   .video-title {
     font-size: 18px;
+  }
+
+  .video-meta {
+    font-size: 14px;
   }
 
   .footer-actions {

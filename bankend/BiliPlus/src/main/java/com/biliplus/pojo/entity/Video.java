@@ -14,7 +14,11 @@ public class Video {
     private String duration; // 视频时长,单位:秒
     private Long userId;  // 上传用户ID ,(关联用户表
     private Integer categoryId;  // 视频分类ID(非空,关联分类表)
+    /** 1原创 0转载（推荐特征） */
+    private Integer isOriginal;
     private Integer status;  // 视频状态
+    /** 时长秒（数值，推荐用） */
+    private Integer durationSec;
     private Long viewCount; // 播放次数
     private Long likeCount; // 点赞次数
     private Integer commentCount; // 评论次数

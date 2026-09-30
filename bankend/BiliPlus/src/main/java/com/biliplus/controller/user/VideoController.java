@@ -2,6 +2,7 @@ package com.biliplus.controller.user;
 
 import com.biliplus.pojo.dto.userdto.VideoPageQueryDTO;
 import com.biliplus.pojo.vo.GetListVideoVO;
+import com.biliplus.pojo.vo.HotVideoVO;
 import com.biliplus.pojo.vo.VideoUploadVO;
 import com.biliplus.result.PageResult;
 import com.biliplus.result.Result;
@@ -13,7 +14,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -46,11 +50,20 @@ public class VideoController {
 
     // 3.加载推荐视频
     @GetMapping("/recommend")
-    public Result<PageResult> recommend(){
+    public Result<PageResult> recommend(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size){
         log.info("加载推荐视频");
-        PageResult pageResult = videoService.recommend();
+        PageResult pageResult = videoService.recommend(page, size);
         log.info("查询结果：{}", pageResult);
         return Result.success(pageResult);
+    }
+
+    /** 热搜/热榜 TopN（匿名可读，GET 默认公开） */
+    @GetMapping("/hot")
+    public Result<List<HotVideoVO>> hot(@RequestParam(required = false) Integer size) {
+        log.info("加载视频热榜 size={}", size);
+        return Result.success(videoService.hot(size));
     }
 
     // 4.分享计数（匿名可用，见 JwtTokenPeopleInterceptor 公开写路径规则）

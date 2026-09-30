@@ -1,6 +1,11 @@
 server:
   address: 0.0.0.0
   port: ${SERVER_PORT:8081}
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
 app:
   external-url: ${EXTERNAL_URL:http://localhost:8081}
   # 跨域允许来源，逗号分隔。生产环境必须通过 CORS_ALLOWED_ORIGINS 覆盖为真实域名
@@ -8,7 +13,13 @@ app:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174}
 spring:
   application:
-    name: BiliPlus
+    name: NexusPlay
+  devtools:
+    add-properties: false
+    restart:
+      enabled: false
+    livereload:
+      enabled: false
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:biliplus}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
@@ -70,12 +81,13 @@ mybatis:
 
 biliplus:
   jwt:
-    admin-secret-key: ${JWT_ADMIN_SECRET:biliPlusAdminSecretKey2024}
-    admin-ttl: 86400000
+    # 生产/本地均通过环境变量注入强随机密钥；禁止使用弱默认值（JwtUtil 会拒绝）
+    admin-secret-key: ${JWT_ADMIN_SECRET:}
+    admin-ttl: ${JWT_ADMIN_TTL:7200000}
     admin-token-name: token
   peoplejwt:
-    people-secret-key: ${JWT_PEOPLE_SECRET:biliPlusPeopleSecretKey2024}
-    people-ttl: 86400000
+    people-secret-key: ${JWT_PEOPLE_SECRET:}
+    people-ttl: ${JWT_PEOPLE_TTL:604800000}
     people-token-name: peopleToken
 
 # 视频上传配置（路径按部署环境注入，默认值仅用于本地开发）

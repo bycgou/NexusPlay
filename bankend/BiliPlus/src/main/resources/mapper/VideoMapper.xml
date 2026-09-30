@@ -22,6 +22,7 @@
         order by v.create_time desc
     </select>
 
+    <!-- 推荐：热度分 + 时间衰减 + 原创加权；过滤未上架、封禁作者、违规视频 -->
     <select id="recommend" resultType="com.biliplus.pojo.vo.GetListVideoVO">
         select v.id,
                v.title,
@@ -43,7 +44,61 @@
         from video v
         left join user u on v.user_id = u.id
         where v.status = 1
-        order by rand()
+          and (u.status is null or u.status = 1)
+          and v.id not in (
+            select r.target_id from report r where r.target_type = 1 and r.status = 1
+            union
+            select h.target_id from sensitive_hit_log h
+              where h.target_type = 'video' and h.target_id is not null
+          )
+          and (v.user_id not in (
+            select p.user_id from user_penalty p where p.status = 1 and p.action = 'ban'
+          ))
+        order by
+          (v.view_count + v.like_count * 3 + v.comment_count * 4 + v.share_count * 2)
+            * pow(0.5, timestampdiff(hour, v.create_time, now()) / 72.0)
+          + (case when ifnull(v.is_original, 1) = 1 then 5 else 0 end)
+          desc,
+          v.create_time desc
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- 热榜：与推荐同源打分，优先 video_feature.hot_score，过滤违规/封禁 -->
+    <select id="hotRank" resultType="com.biliplus.pojo.vo.HotVideoVO">
+        select v.id,
+               v.title,
+               v.cover_url as coverUrl,
+               v.duration,
+               v.user_id as userId,
+               v.category_id as categoryId,
+               v.view_count as viewCount,
+               v.like_count as likeCount,
+               v.comment_count as commentCount,
+               v.share_count as shareCount,
+               v.create_time as createTime,
+               u.nickname,
+               u.avatar,
+               ifnull(f.hot_score,
+                      (v.view_count + v.like_count * 3 + v.comment_count * 4 + v.share_count * 2)
+                        * pow(0.5, timestampdiff(hour, v.create_time, now()) / 72.0)
+                        + (case when ifnull(v.is_original, 1) = 1 then 5 else 0 end)
+               ) as hotScore
+        from video v
+        left join user u on v.user_id = u.id
+        left join video_feature f on f.video_id = v.id and f.pool_status = 1
+        where v.status = 1
+          and (u.status is null or u.status = 1)
+          and v.id not in (
+            select r.target_id from report r where r.target_type = 1 and r.status = 1
+            union
+            select h.target_id from sensitive_hit_log h
+              where h.target_type = 'video' and h.target_id is not null
+          )
+          and (v.user_id not in (
+            select p.user_id from user_penalty p where p.status = 1 and p.action = 'ban'
+          ))
+        order by hotScore desc, v.create_time desc
+        limit #{size}
     </select>
 
 </mapper>

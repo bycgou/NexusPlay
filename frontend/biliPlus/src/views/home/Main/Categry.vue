@@ -58,12 +58,17 @@ onMounted(loadCategories)
 <style scoped>
 .category-tabs {
   background-color: var(--paper-white);
-  padding: var(--space-sm) 0;
+  padding: var(--space-xs) 0;
+  position: sticky;
+  top: 60px;
+  z-index: 20;
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
 
 .tabs-row {
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
 }
 

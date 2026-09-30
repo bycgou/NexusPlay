@@ -35,7 +35,25 @@ public class ReportServiceImpl implements ReportService {
     private CommentMapper commentMapper;
 
     @Autowired
+    private com.biliplus.mapper.DanmakuMapper danmakuMapper;
+
+    @Autowired
+    private com.biliplus.service.LiveRoomService liveRoomService;
+
+    @Autowired
+    private com.biliplus.service.UserPenaltyService userPenaltyService;
+
+    @Autowired
     private NotificationService notificationService;
+
+    @Autowired
+    private com.biliplus.service.UserCreditService userCreditService;
+
+    @Autowired
+    private com.biliplus.service.EventLogService eventLogService;
+
+    @Autowired
+    private com.biliplus.service.AdminOperationLogService adminOperationLogService;
 
     @Override
     @Transactional
@@ -71,6 +89,9 @@ public class ReportServiceImpl implements ReportService {
         reportMapper.insert(report);
         log.info("用户 {} 举报 targetType={}, targetId={}, reason={}",
                 reporterId, targetType, targetId, reason);
+        eventLogService.record(com.biliplus.constant.EventType.REPORT, reporterId,
+                "target_type_" + targetType, targetId,
+                null, "{\"reason\":" + reason + "}", com.biliplus.constant.EventType.SOURCE_WEB);
         return report;
     }
 
@@ -115,9 +136,11 @@ public class ReportServiceImpl implements ReportService {
             applyTakedown(report);
         }
         log.info("管理员 {} 处理举报 {}，结果 status={}", adminId, reportId, status);
+        adminOperationLogService.record("report.handle", "report", reportId,
+                "status=" + status + (trimmedRemark == null ? "" : ", remark=" + trimmedRemark));
     }
 
-    /** 举报成立后的联动处置：视频下架 / 评论软删；用户与直播间暂只记录结论 */
+    /** 举报成立后的联动处置：视频下架 / 评论·弹幕删除 / 用户禁言 / 直播间强制下播 */
     private void applyTakedown(Report report) {
         Integer type = report.getTargetType();
         Long targetId = report.getTargetId();
@@ -134,6 +157,8 @@ public class ReportServiceImpl implements ReportService {
                             StringUtils.hasText(report.getHandleRemark())
                                     ? report.getHandleRemark() : "内容违反社区规范，已被下架。",
                             Notify.BIZ_VIDEO, targetId);
+                    // 举报成立：对内容作者计一次违规
+                    userCreditService.applyViolation(video.getUserId(), -10, "稿件被举报并下架");
                 }
             }
         } else if (type == ReportTarget.TYPE_COMMENT) {
@@ -141,6 +166,57 @@ public class ReportServiceImpl implements ReportService {
             // 复用评论软删：where 带 user_id，用评论作者本人身份触发
             if (comment != null && comment.getUserId() != null) {
                 commentMapper.softDelete(targetId, comment.getUserId());
+                userCreditService.applyViolation(comment.getUserId(), -10, "评论被举报并删除");
+                notificationService.notify(comment.getUserId(), null, Notify.TYPE_AUDIT,
+                        "你的评论因举报被删除",
+                        StringUtils.hasText(report.getHandleRemark())
+                                ? report.getHandleRemark() : "内容违反社区规范，已被删除。",
+                        Notify.BIZ_VIDEO, comment.getVideoId());
+            }
+        } else if (type == ReportTarget.TYPE_DANMAKU) {
+            com.biliplus.pojo.entity.Danmaku danmaku = danmakuMapper.selectById(targetId);
+            if (danmaku != null) {
+                danmakuMapper.softDelete(targetId);
+                if (danmaku.getUserId() != null) {
+                    userCreditService.applyViolation(danmaku.getUserId(), -10, "弹幕被举报并删除");
+                    notificationService.notify(danmaku.getUserId(), null, Notify.TYPE_AUDIT,
+                            "你的弹幕因举报被删除",
+                            StringUtils.hasText(report.getHandleRemark())
+                                    ? report.getHandleRemark() : "内容违反社区规范，已被删除。",
+                            Notify.BIZ_VIDEO, danmaku.getVideoId());
+                }
+            }
+        } else if (type == ReportTarget.TYPE_USER) {
+            // 用户举报成立：扣信用分 + 自动禁言 3 天
+            userCreditService.applyViolation(targetId, -10, "用户被举报并核实违规");
+            try {
+                userPenaltyService.penalize(targetId, "mute",
+                        StringUtils.hasText(report.getHandleRemark())
+                                ? report.getHandleRemark() : "举报核实违规，禁言 3 天",
+                        3, null);
+            } catch (Exception e) {
+                // 已有生效中的处置时不重复
+                log.warn("举报成立自动禁言未执行 userId={}", targetId, e);
+            }
+            notificationService.notify(targetId, null, Notify.TYPE_AUDIT,
+                    "你的账号因举报被禁言",
+                    StringUtils.hasText(report.getHandleRemark())
+                            ? report.getHandleRemark() : "内容违反社区规范，账号已被临时禁言。",
+                    null, null);
+        } else if (type == ReportTarget.TYPE_LIVE_ROOM) {
+            try {
+                liveRoomService.forceStop(targetId);
+            } catch (Exception e) {
+                log.warn("举报成立强制下播未执行 roomId={}", targetId, e);
+            }
+            com.biliplus.pojo.entity.LiveRoom room = liveRoomService.getLiveRoom(targetId);
+            if (room != null && room.getUserId() != null) {
+                userCreditService.applyViolation(room.getUserId(), -10, "直播间被举报并强制下播");
+                notificationService.notify(room.getUserId(), null, Notify.TYPE_LIVE_START,
+                        "你的直播间因举报被强制下播",
+                        StringUtils.hasText(report.getHandleRemark())
+                                ? report.getHandleRemark() : "直播间违反社区规范，已被强制下播。",
+                        "live", targetId);
             }
         }
     }

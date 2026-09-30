@@ -51,6 +51,15 @@ public class CommentServiceImpl implements CommentService {
     @Autowired
     private NotificationService notificationService;
 
+    @Autowired
+    private com.biliplus.service.SensitiveWordService sensitiveWordService;
+
+    @Autowired
+    private com.biliplus.service.UserPenaltyService userPenaltyService;
+
+    @Autowired
+    private com.biliplus.service.EventLogService eventLogService;
+
     @Override
     @Transactional
     public void saveComment(CommentPostDTO commentPostDTO) {
@@ -63,6 +72,11 @@ public class CommentServiceImpl implements CommentService {
         if (userId == null) {
             throw new BusinessException("请先登录");
         }
+        // 禁言中的用户不能发言
+        if (userPenaltyService.isMuted(userId)) {
+            throw new BusinessException("你已被禁言，暂时无法发表评论");
+        }
+        sensitiveWordService.enforce(commentPostDTO.getContent(), userId, "comment", null);
 
         Comment comment = new Comment();
         comment.setVideoId(commentPostDTO.getVideoId());
@@ -77,6 +91,9 @@ public class CommentServiceImpl implements CommentService {
 
         commentMapper.save(comment);
         videoMapper.increaseCommentCount(comment.getVideoId());
+        eventLogService.record(com.biliplus.constant.EventType.COMMENT, userId,
+                com.biliplus.constant.EventType.TARGET_VIDEO, comment.getVideoId(),
+                null, comment.getContent(), com.biliplus.constant.EventType.SOURCE_WEB);
 
         notifyComment(comment, userId);
     }

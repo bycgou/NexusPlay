@@ -67,9 +67,9 @@ const onImageError = (e) => {
 .recommend-sidebar {
   background: #fff;
   border-radius: 8px;
-  padding: 16px;
+  padding: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  margin-top: 20px;
+  margin-top: 0;
 }
 
 .title {
@@ -98,7 +98,7 @@ const onImageError = (e) => {
 
 .cover-container {
   position: relative;
-  width: 120px;
+  width: 96px;
   height: 67.5px; /* 16:9 */
   border-radius: 6px;
   overflow: hidden;
@@ -127,7 +127,7 @@ const onImageError = (e) => {
 }
 
 .title {
-  font-size: 14px;
+  font-size: 13px;
   color: #303133;
   line-height: 1.4;
   margin: 0 0 4px;

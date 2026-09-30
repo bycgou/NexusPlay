@@ -47,6 +47,12 @@ class LiveRoomServiceImplTest {
     @Mock
     private LivePkService livePkService;
 
+    @Mock
+    private com.biliplus.service.LiveReplayService liveReplayService;
+
+    @Mock
+    private EventLogService eventLogService;
+
     @Spy
     private LiveProperties liveProperties = new LiveProperties();
 

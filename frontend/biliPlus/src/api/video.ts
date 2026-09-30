@@ -1,5 +1,5 @@
 // src/api/video.js
-import request from '@/utils/request'; // ✅ 导入你封装好的带拦截器的实例
+import request from '@/utils/request';
 
 // 1. 获取视频列表（title / categoryId / userId 可选）
 export const getVideoList = (params = {}) => {
@@ -25,10 +25,23 @@ export const getVideoDetail = (videoId) => {
 }
 
 // 3. 获取推荐视频
-export const getRecommendVideos = () => {
+export const getRecommendVideos = (params = {}) => {
     return request({
         url: `/pp/videos/recommend`,
-        method: 'get'
+        method: 'get',
+        params: {
+            page: params.page || 1,
+            size: params.size || 20
+        }
+    });
+}
+
+// 3b. 热搜/热榜 TopN
+export const getHotVideos = (size = 20) => {
+    return request({
+        url: `/pp/videos/hot`,
+        method: 'get',
+        params: { size }
     });
 }
 
@@ -45,6 +58,15 @@ export const shareVideo = (videoId) => {
     return request({
         url: `/pp/videos/${videoId}/share`,
         method: 'post'
+    });
+}
+
+// 6. 视频弹幕列表（含 id/userId，供举报点选）
+export const getVideoDanmakus = (videoId, maxCount = 500) => {
+    return request({
+        url: '/pp/user/danmakuv3',
+        method: 'get',
+        params: { videoId, maxCount }
     });
 }
 

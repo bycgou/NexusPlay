@@ -23,14 +23,11 @@ const routers: RouteRecordRaw[] = [
         component: () => import('@/views/anime/AnimeSquare.vue'),
         meta: {title: '番剧'}
     },
+    // 登录/注册改为全局弹窗（Header / AuthDialog），不再使用独立页面
     {
         path: '/login',
-        name: 'Login',
-        component: () => import('@/views/login/UserLogin.vue'),
-        meta: {title: '登录'}
+        redirect: '/'
     },
-    // 注册不再使用独立页面：views/login/Register.vue 本就是空壳，
-    // 实际注册流程在 Header 的注册弹窗里，登录页链接用 /?register=1 触发
     {
         path: '/contribute',
         name: 'Contribute',
@@ -129,7 +126,7 @@ const routers: RouteRecordRaw[] = [
             } catch {
                 // ignore
             }
-            return '/login'
+            return '/'
         }
     },
     {
@@ -188,12 +185,16 @@ router.beforeEach((to, from, next) => {
     const title = to.meta?.title as string
     document.title = title ? `${title} - NexusPlay` : 'NexusPlay'
 
-    // 检查登录
+    // 免登录浏览；仅投稿/消息/设置等写操作入口需要登录，弹窗引导
     if (to.meta?.requiresAuth) {
         const token = localStorage.getItem('token')
         if (!token) {
-            ElMessage.warning('请先登录')
-            next('/login')
+            ElMessage.warning('请先登录后再操作')
+            // 延迟弹窗，确保路由切换完成
+            import('@/composables/useAuthPrompt').then(({ authPrompt }) => {
+                authPrompt.openLogin()
+            })
+            next(from.name ? false : '/')
             return
         }
     }

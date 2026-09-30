@@ -17,7 +17,7 @@
 <script setup>
 import VideoItem from "@/views/home/Main/Video/VideoItem.vue";
 import VideoList from "@/views/home/Main/Video/VideoList.vue";
-import {getVideoList} from "@/api/video.js";
+import {getVideoList, getRecommendVideos} from "@/api/video";
 import { ref, watch, onMounted } from 'vue'
 
 const props = defineProps({
@@ -53,17 +53,28 @@ const loadVideoList = async (reset = false) => {
       page.value = 1
       videoList.value = []
     }
-    const params = { page: page.value, pageSize: pageSize.value }
-    if (props.categoryId != null && props.categoryId !== '') {
-      params.categoryId = props.categoryId
+    const hasCategory = props.categoryId != null && props.categoryId !== ''
+    let res
+    if (hasCategory) {
+      res = await getVideoList({
+        page: page.value,
+        pageSize: pageSize.value,
+        categoryId: props.categoryId
+      })
+    } else {
+      // 首页主列表：走热度推荐，与左侧热榜同源
+      res = await getRecommendVideos({
+        page: page.value,
+        size: pageSize.value
+      })
     }
-    const res = await getVideoList(params)
-    if (res.code === 1 && Array.isArray(res.data?.records)) {
-      const formattedData = formatVideoData(res.data.records)
+    const records = res?.data?.records
+    if (res.code === 1 && Array.isArray(records)) {
+      const formattedData = formatVideoData(records)
       videoList.value.push(...formattedData)
     }
   } catch (err) {
-    console.error('加载视频列表失败：', err)
+    console.error('加载视频列表失败', err)
   } finally {
     loading.value = false
   }
@@ -86,7 +97,7 @@ onMounted(() => {
 <style scoped>
 .page-container {
   background-color: var(--paper);
-  padding: var(--space-md) 0;
+  padding: var(--space-sm) 0 var(--space-md);
   min-height: calc(100vh - 60px);
 }
 </style>

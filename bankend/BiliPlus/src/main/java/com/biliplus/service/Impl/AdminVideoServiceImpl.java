@@ -36,6 +36,18 @@ public class AdminVideoServiceImpl implements AdminVideoService {
     @Autowired
     private DynamicService dynamicService;
 
+    @Autowired
+    private com.biliplus.service.UserCreditService userCreditService;
+
+    @Autowired
+    private com.biliplus.service.EventLogService eventLogService;
+
+    @Autowired
+    private com.biliplus.service.AdminOperationLogService adminOperationLogService;
+
+    @Autowired
+    private com.biliplus.service.VideoFeatureService videoFeatureService;
+
     @Override
     public PageResult pageByStatus(Integer status, Integer page, Integer pageSize) {
         int p = page == null || page < 1 ? 1 : page;
@@ -62,6 +74,17 @@ public class AdminVideoServiceImpl implements AdminVideoService {
         notifyAuthor(videoId, "你的稿件已通过审核",
                 "《" + videoTitle(videoId) + "》已通过审核，现在可以在首页与频道页看到它了。");
         publishDynamic(videoId);
+        // 通过是正向行为，给作者加信用分
+        Video approved = adminVideoMapper.selectById(videoId);
+        if (approved != null) {
+            userCreditService.applyReward(approved.getUserId(), 2);
+            // 进入推荐池（P0：过审即入池）
+            videoFeatureService.enterPool(videoId, approved.getDurationSec(), approved.getIsOriginal());
+        }
+        eventLogService.record(com.biliplus.constant.EventType.AUDIT_PASS, null,
+                com.biliplus.constant.EventType.TARGET_VIDEO, videoId,
+                null, null, com.biliplus.constant.EventType.SOURCE_ADMIN);
+        adminOperationLogService.record("video.approve", "video", videoId, null);
     }
 
     @Override
@@ -82,14 +105,29 @@ public class AdminVideoServiceImpl implements AdminVideoService {
             throw new BusinessException("审核不通过失败：视频不存在或状态不正确");
         }
         log.info("视频审核不通过 id={} reason={}", videoId, trimmed);
+        videoFeatureService.leavePool(videoId);
         notifyAuthor(videoId, "你的稿件未通过审核", "原因：" + trimmed);
+        // 驳回计一次违规
+        Video rejected = adminVideoMapper.selectById(videoId);
+        if (rejected != null) {
+            userCreditService.applyViolation(rejected.getUserId(), -3, "稿件审核未通过");
+        }
+        eventLogService.record(com.biliplus.constant.EventType.AUDIT_REJECT, null,
+                com.biliplus.constant.EventType.TARGET_VIDEO, videoId,
+                null, reason, com.biliplus.constant.EventType.SOURCE_ADMIN);
+        adminOperationLogService.record("video.reject", "video", videoId, reason);
     }
 
     @Override
     public void offline(Long videoId) {
         changeStatus(videoId, STATUS_NORMAL, STATUS_OFFLINE, "下架失败：视频不存在或状态不正确");
+        videoFeatureService.leavePool(videoId);
         notifyAuthor(videoId, "你的稿件已被下架",
                 "《" + videoTitle(videoId) + "》已被下架，如有疑问请联系管理员。");
+        eventLogService.record(com.biliplus.constant.EventType.AUDIT_OFFLINE, null,
+                com.biliplus.constant.EventType.TARGET_VIDEO, videoId,
+                null, null, com.biliplus.constant.EventType.SOURCE_ADMIN);
+        adminOperationLogService.record("video.offline", "video", videoId, null);
     }
 
     /** 审核结果通知作者本人 */

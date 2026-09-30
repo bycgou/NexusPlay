@@ -1,6 +1,7 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useAuthPrompt } from '@/composables/useAuthPrompt'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import flvjs from 'flv.js'
 import { getLiveRoom, enterLiveRoom, leaveLiveRoom, stopLive, listLiveRooms,
@@ -10,10 +11,12 @@ import { listGifts, getWallet, createRechargeOrder, payRechargeOrder,
 import { getActivePk, respondPk, leaveMic, invitePk, endPk } from '@/api/pk'
 import { useLiveSocket } from '@/composables/useLiveSocket'
 import GiftEffectLayer from '@/components/GiftEffectLayer.vue'
+import ReportDialog from '@/components/ReportDialog.vue'
 import { SRS_FLV_BASE, SRS_FLV_PROXY_PREFIX } from '@/utils/env'
 
 const route = useRoute()
 const router = useRouter()
+const authPrompt = useAuthPrompt()
 const roomId = Number(route.params.id)
 
 const room = ref<LiveRoom | null>(null)
@@ -63,6 +66,7 @@ const displayGifts = computed(() => {
 
 const playerError = ref('')
 const streamPublishing = ref(false)
+const reportVisible = ref(false)
 /** flv 真正收到媒体数据（有画面）后为 true，用来去掉遮罩 */
 const playerHasData = ref(false)
 let statusTimer: any = null
@@ -262,7 +266,7 @@ const playNextGift = () => {
 const sendGiftAction = async () => {
   if (!isLogin()) {
     ElMessage.warning('请先登录')
-    router.push('/login')
+    authPrompt.openLogin()
     return
   }
   if (isHost.value) {
@@ -718,6 +722,7 @@ onUnmounted(() => {
       </div>
       <div class="header-actions">
         <el-button v-if="isHost" @click="goStudio">回主播台</el-button>
+        <el-button v-if="!isHost" type="danger" plain size="small" @click="reportVisible = true">举报</el-button>
         <el-button v-if="isHost" type="danger" @click="handleStopLive">下播</el-button>
         <el-button text @click="goSquare">返回广场</el-button>
       </div>
@@ -896,6 +901,13 @@ onUnmounted(() => {
 
     <!-- 礼物特效层（15 款差异化动画） -->
     <GiftEffectLayer :gift="giftFx" />
+
+    <ReportDialog
+        v-model="reportVisible"
+        :target-type="5"
+        :target-id="roomId"
+        title="举报该直播间"
+    />
   </div>
 </template>
 
@@ -928,7 +940,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(90deg, #fb7299, #ff9a5b);
+  background: linear-gradient(90deg, #2563EB, #60A5FA);
   color: #fff;
   border-radius: 8px;
   padding: 8px 16px;
@@ -1062,7 +1074,7 @@ onUnmounted(() => {
 }
 .msgs { flex: 1; overflow-y: auto; padding: 10px; font-size: 13px; }
 .msg { margin-bottom: 6px; word-break: break-word; }
-.msg.gift { color: #fb7299; }
+.msg.gift { color: #2563EB; }
 .empty-msg { color: #bbb; font-size: 12px; padding: 12px; }
 .input-row { display: flex; gap: 6px; padding: 8px; }
 .quick { padding: 0 8px 8px; }
@@ -1103,7 +1115,7 @@ onUnmounted(() => {
   color: #666;
 }
 .gift-tab.on {
-  background: #fb7299;
+  background: #2563EB;
   color: #fff;
   font-weight: 600;
 }
@@ -1135,7 +1147,7 @@ onUnmounted(() => {
   border-color: rgba(241,196,15,0.35);
 }
 .gift-item.active {
-  border-color: #fb7299;
+  border-color: #2563EB;
   background: rgba(251, 114, 153, 0.12);
 }
 .gift-item .gname { font-size: 12px; }
@@ -1171,14 +1183,14 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(90deg, #fb7299, #ff6b9d);
+  background: linear-gradient(90deg, #2563EB, #60A5FA);
   color: #fff;
   padding: 10px 20px;
   border-radius: 24px;
   box-shadow: 0 4px 20px rgba(251, 114, 153, 0.4);
   font-weight: 600;
 }
-.gift-banner.lv2 { background: linear-gradient(90deg, #ff9a5b, #ffb547); }
+.gift-banner.lv2 { background: linear-gradient(90deg, #60A5FA, #ffb547); }
 .gift-banner.lv3 {
   background: linear-gradient(90deg, #f5a623, #ff6b6b);
   animation: pulse 0.6s ease infinite alternate;

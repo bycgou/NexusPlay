@@ -29,8 +29,9 @@ import Main from '@/views/components/Main.vue'
   overflow: hidden;
 }
 .side-wrap {
-  background: linear-gradient(180deg, #1f2d3d 0%, #2b3a4a 100%);
-  overflow: auto;
+  background: #ffffff;
+  border-right: 1px solid #e8eef7;
+  overflow: hidden;
 }
 .top-header {
   background: #fff;
@@ -41,8 +42,9 @@ import Main from '@/views/components/Main.vue'
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 .content-main {
-  background: #f5f7fa;
+  background: #f5f7fb;
   padding: 0;
   overflow: auto;
+  position: relative;
 }
 </style>

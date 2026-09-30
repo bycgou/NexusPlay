@@ -50,7 +50,15 @@ service.interceptors.response.use(
             localStorage.removeItem('token');
             localStorage.removeItem('userInfo');
             ElMessage.error('登录状态已失效，请重新登录');
-            router.push('/login').catch(err => console.warn('路由跳转失败：', err));
+            import('@/composables/useAuthPrompt').then(({ authPrompt }) => authPrompt.openLogin());
+
+        } else if (status === 403) {
+            // 账号被封禁：清登录态并弹登录
+            const errMsg = error.response?.data?.msg || '账号已被封禁，如有疑问请联系管理员';
+            localStorage.removeItem('token');
+            localStorage.removeItem('userInfo');
+            ElMessage.error(errMsg);
+            import('@/composables/useAuthPrompt').then(({ authPrompt }) => authPrompt.openLogin());
 
         } else {
             // 其他错误提示（优先使用后端返回的msg）

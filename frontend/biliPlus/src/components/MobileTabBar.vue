@@ -1,11 +1,13 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/store/user'
+import { useAuthPrompt } from '@/composables/useAuthPrompt'
 import { getUnreadTotal } from '@/api/chat'
 import { getNotificationUnreadCount } from '@/api/notify'
 
 const router = useRouter()
+const authPrompt = useAuthPrompt()
 const route = useRoute()
 const userStore = useUserStore()
 
@@ -69,7 +71,7 @@ const handleTabClick = (index: number) => {
 
   // 需要登录的页面
   if (tab.needAuth && !userStore.isLogin) {
-    router.push('/login')
+    authPrompt.openLogin()
     return
   }
 

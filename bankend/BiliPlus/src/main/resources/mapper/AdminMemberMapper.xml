@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.biliplus.mapper.AdminMemberMapper">
+
+    <sql id="listSelect">
+        SELECT u.id, u.username, u.nickname, u.avatar, u.email, u.phone, u.signature,
+               u.role, u.status, u.create_time AS createTime, u.update_time AS updateTime,
+               IFNULL(c.score, 100) AS creditScore,
+               IFNULL(c.violation_count, 0) AS violationCount,
+               c.last_violation_time AS lastViolationTime,
+               (SELECT COUNT(*) FROM video v WHERE v.user_id = u.id AND v.status != -1) AS videoCount,
+               (SELECT COUNT(*) FROM user_follow f WHERE f.follow_user_id = u.id) AS fansCount,
+               (SELECT COUNT(*) FROM user_follow f WHERE f.user_id = u.id) AS followingCount,
+               IFNULL((SELECT COUNT(*) FROM user_penalty p
+                        WHERE p.user_id = u.id AND p.status = 1 AND p.action = 'mute'), 0) AS muted,
+               IFNULL((SELECT COUNT(*) FROM user_penalty p
+                        WHERE p.user_id = u.id AND p.status = 1 AND p.action = 'ban'), 0) AS banned
+        FROM user u
+        LEFT JOIN user_credit c ON c.user_id = u.id
+    </sql>
+
+    <sql id="listWhere">
+        <where>
+            <if test="keyword != null and keyword != ''">
+                (u.username LIKE CONCAT('%', #{keyword}, '%')
+                 OR u.nickname LIKE CONCAT('%', #{keyword}, '%')
+                 OR u.email LIKE CONCAT('%', #{keyword}, '%')
+                 OR u.phone LIKE CONCAT('%', #{keyword}, '%')
+                 OR u.id = #{keywordId})
+            </if>
+            <if test="status != null">
+                AND u.status = #{status}
+            </if>
+            <if test="role != null">
+                AND u.role = #{role}
+            </if>
+        </where>
+    </sql>
+
+    <select id="adminList" resultType="com.biliplus.pojo.vo.AdminMemberVO">
+        <include refid="listSelect"/>
+        <include refid="listWhere"/>
+        ORDER BY u.id DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="adminCount" resultType="long">
+        SELECT COUNT(*)
+        FROM user u
+        <include refid="listWhere"/>
+    </select>
+
+    <select id="selectDetail" resultType="com.biliplus.pojo.vo.AdminMemberVO">
+        <include refid="listSelect"/>
+        WHERE u.id = #{id}
+    </select>
+</mapper>

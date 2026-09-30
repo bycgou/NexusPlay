@@ -1,5 +1,23 @@
-* {
+﻿* {
   box-sizing: border-box;
+}
+
+:root {
+  /* 对齐用户端 NexusPlay 品牌色 */
+  --brand: #2563EB;
+  --brand-dark: #1D4ED8;
+  --brand-light: #60A5FA;
+  --brand-bg: rgba(37, 99, 235, 0.08);
+  --admin-ink: #1e293b;
+  --admin-paper: #f5f7fb;
+
+  --el-color-primary: #2563EB;
+  --el-color-primary-light-3: #60A5FA;
+  --el-color-primary-light-5: #60A5FA;
+  --el-color-primary-light-7: #c4bffc;
+  --el-color-primary-light-8: #d6d2fd;
+  --el-color-primary-light-9: #ece9fe;
+  --el-color-primary-dark-2: #1D4ED8;
 }
 
 html,
@@ -8,9 +26,9 @@ body,
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
-  background: #f5f7fa;
-  color: #303133;
+  font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  background: var(--admin-paper);
+  color: var(--admin-ink);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -27,5 +45,36 @@ body,
 }
 
 .el-table th.el-table__cell {
-  background: #fafafa !important;
+  background: #fafbff !important;
+}
+
+/* 弹窗全局修复：避免被主区域 overflow 裁剪 / 层级错乱 */
+.el-overlay {
+  position: fixed !important;
+  z-index: 2000 !important;
+}
+.el-dialog {
+  margin-top: 8vh !important;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.18);
+}
+.el-dialog__header {
+  border-bottom: 1px solid #eef0f4;
+  padding: 16px 20px 12px;
+  margin-right: 0;
+}
+.el-dialog__title {
+  font-weight: 600;
+  color: var(--admin-ink);
+}
+.el-dialog__body {
+  padding: 18px 20px;
+}
+.el-dialog__footer {
+  border-top: 1px solid #eef0f4;
+  padding: 12px 20px 14px;
+}
+.el-message-box {
+  border-radius: 12px;
+  border-color: #eef0f4;
 }

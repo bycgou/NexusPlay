@@ -57,3 +57,16 @@ coverage/
 
 # Local media uploads (optional)
 # MyOSS/
+
+# local tool caches
+.playwright-cli/
+*.log
+bankend/BiliPlus/backend-start*.log
+
+# local analysis / security probe scripts (not product code)
+extract_paths.py
+pentest_probe.py
+frontend.html
+
+captcha_*.png
+*_sample.png

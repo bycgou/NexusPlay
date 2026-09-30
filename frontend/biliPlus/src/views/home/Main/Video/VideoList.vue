@@ -55,16 +55,16 @@ const props = defineProps({
 
 <style scoped>
 .video-list-container {
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: var(--space-lg) var(--space-md);
+  padding: var(--space-sm) var(--space-md) var(--space-lg);
 }
 
 .list-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-lg);
+  margin-bottom: var(--space-md);
 }
 
 .list-title {

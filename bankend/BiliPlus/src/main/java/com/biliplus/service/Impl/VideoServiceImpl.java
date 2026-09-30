@@ -7,6 +7,7 @@ import com.biliplus.pojo.dto.userdto.VideoPageQueryDTO;
 import com.biliplus.pojo.entity.User;
 import com.biliplus.pojo.entity.Video;
 import com.biliplus.pojo.vo.GetListVideoVO;
+import com.biliplus.pojo.vo.HotVideoVO;
 import com.biliplus.pojo.vo.VideoUploadVO;
 import com.biliplus.result.PageResult;
 import com.biliplus.service.VideoService;
@@ -27,6 +28,9 @@ public class VideoServiceImpl implements VideoService {
 
     @Autowired
     private PeopleUserMapper peopleUserMapper;
+
+    @Autowired
+    private com.biliplus.service.EventLogService eventLogService;
     /**
      * 分页查询
      * @param videoPageQueryDTO
@@ -106,6 +110,11 @@ public class VideoServiceImpl implements VideoService {
         if (video.getViewCount() != null) {
             video.setViewCount(video.getViewCount() + 1);
         }
+        // 曝光是违规曝光率的分母，必须落明细流水
+        eventLogService.record(com.biliplus.constant.EventType.VIDEO_VIEW,
+                com.biliplus.utils.UserContext.getCurrentUserId(),
+                com.biliplus.constant.EventType.TARGET_VIDEO, videoId,
+                null, null, com.biliplus.constant.EventType.SOURCE_WEB);
 
         VideoUploadVO videoUploadVO = new VideoUploadVO();
         Long userId = video.getUserId();
@@ -121,11 +130,29 @@ public class VideoServiceImpl implements VideoService {
 
     // 3.加载推荐视频
     @Override
-    public PageResult recommend() {
-        // PageHelper 会自动追加 LIMIT，SQL 里不要再写 limit
-        PageHelper.startPage(1, 10);
-        Page<GetListVideoVO> page = videoMapper.recommend();
-        return new PageResult(page.getTotal(), page.getResult());
+    public PageResult recommend(Integer page, Integer size) {
+        int p = page == null || page < 1 ? 1 : page;
+        int s = size == null || size < 1 ? 20 : Math.min(size, 50);
+        int offset = (p - 1) * s;
+        // 显式 LIMIT，避免复杂 SQL 下 PageHelper 失效导致全量返回
+        Page<GetListVideoVO> result = videoMapper.recommend(offset, s);
+        return new PageResult(result.getTotal(), result.getResult());
+    }
+
+    @Override
+    public List<HotVideoVO> hot(Integer size) {
+        int s = size == null || size < 1 ? 20 : Math.min(size, 50);
+        List<HotVideoVO> list = videoMapper.hotRank(s);
+        if (list == null) {
+            return new ArrayList<>();
+        }
+        for (int i = 0; i < list.size(); i++) {
+            HotVideoVO vo = list.get(i);
+            if (vo != null) {
+                vo.setRank(i + 1);
+            }
+        }
+        return list;
     }
 
     @Override
@@ -136,6 +163,9 @@ public class VideoServiceImpl implements VideoService {
         // 未通过审核或已下架的稿件不计分享数（影响行数为 0）
         videoMapper.increaseShareCount(videoId);
         Integer count = videoMapper.selectShareCount(videoId);
+        eventLogService.record(com.biliplus.constant.EventType.VIDEO_SHARE,
+                com.biliplus.utils.UserContext.getCurrentUserId(),
+                com.biliplus.constant.EventType.TARGET_VIDEO, videoId);
         return count == null ? null : count.longValue();
     }
 }

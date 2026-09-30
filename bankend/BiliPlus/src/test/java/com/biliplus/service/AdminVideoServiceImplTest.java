@@ -28,6 +28,18 @@ class AdminVideoServiceImplTest {
     @Mock
     private DynamicService dynamicService;
 
+    @Mock
+    private UserCreditService userCreditService;
+
+    @Mock
+    private EventLogService eventLogService;
+
+    @Mock
+    private AdminOperationLogService adminOperationLogService;
+
+    @Mock
+    private VideoFeatureService videoFeatureService;
+
     @InjectMocks
     private AdminVideoServiceImpl adminVideoService;
 

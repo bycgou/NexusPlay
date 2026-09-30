@@ -22,6 +22,9 @@ public interface PeopleUserService {
 
     UserDTO getUserById(Long userId);
 
+    /** 公开资料（不含邮箱/手机） */
+    com.biliplus.pojo.vo.UserPublicVO getPublicById(Long userId);
+
     UserDTO getUserByName(String name);
 
     /** 当前登录用户的投稿列表（含审核状态、不通过原因与标签） */
@@ -37,7 +40,7 @@ public interface PeopleUserService {
     void resubmitMyVideo(Long userId, Long videoId);
 
     /** 按昵称/用户名搜索用户（不含敏感字段） */
-    java.util.List<UserDTO> searchUsers(String keyword, Integer limit);
+    java.util.List<com.biliplus.pojo.vo.UserPublicVO> searchUsers(String keyword, Integer limit);
 
     /** 修改当前登录用户密码 */
     void changePassword(String oldPassword, String newPassword);

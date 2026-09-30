@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -119,7 +119,7 @@ onMounted(loadList)
       </el-table-column>
     </el-table>
 
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="520px">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="520px" append-to-body>
       <el-form label-width="90px">
         <el-form-item label="分区名称" required>
           <el-input v-model="form.name" placeholder="如：游戏直播" maxlength="50" />

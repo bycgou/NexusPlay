@@ -1,18 +1,33 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import Header from '@/views/home/Header.vue'
 import MobileTabBar from '@/components/MobileTabBar.vue'
+import AuthDialog from '@/components/AuthDialog.vue'
 import { useTheme } from '@/composables/useTheme'
+import { useAuthPrompt } from '@/composables/useAuthPrompt'
 
 useTheme()
 
 const route = useRoute()
+const authPrompt = useAuthPrompt()
 
-// 登录页不显示顶栏与底部导航
-// 注册走 Header 内的弹窗（/?register=1），因此注册场景必须显示顶栏
-const hideChromePaths = ['/login']
-const showChrome = computed(() => !hideChromePaths.includes(route.path))
+// 免登录浏览：顶栏与底部导航始终显示
+const showChrome = computed(() => true)
+
+// /?register=1 触发注册弹窗（兼容旧链接）
+onMounted(() => {
+  if (route.query.register === '1' || route.query.register === 1) {
+    authPrompt.openRegister()
+  }
+})
+
+watch(
+  () => route.query.register,
+  (v) => {
+    if (v === '1' || v === 1) authPrompt.openRegister()
+  }
+)
 </script>
 
 <template>
@@ -24,6 +39,7 @@ const showChrome = computed(() => !hideChromePaths.includes(route.path))
       <router-view></router-view>
     </div>
     <MobileTabBar v-if="showChrome" />
+    <AuthDialog />
   </div>
 </template>
 

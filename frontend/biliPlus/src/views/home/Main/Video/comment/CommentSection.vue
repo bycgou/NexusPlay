@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="comment-section">
     <div class="comment-header">
       <span class="title">评论</span>
@@ -48,6 +48,7 @@
               {{ c.liked ? '已赞' : '赞' }} {{ c.likeCount || 0 }}
             </button>
             <button type="button" class="link" @click="openReply(c)">回复</button>
+            <button type="button" class="link danger" @click="openReport(c)">举报</button>
           </div>
 
           <!-- 回复输入框：挂在当前评论下方 -->
@@ -90,6 +91,7 @@
                 <div class="text">{{ child.content }}</div>
                 <div class="meta">
                   <span class="time">{{ formatDate(child.createTime) }}</span>
+                  <button type="button" class="link danger" @click="openReport(child)">举报</button>
                 </div>
               </div>
             </div>
@@ -97,6 +99,13 @@
         </div>
       </div>
     </div>
+
+    <ReportDialog
+        v-model="reportVisible"
+        :target-type="2"
+        :target-id="reportTargetId"
+        title="举报该评论"
+    />
   </div>
 </template>
 
@@ -104,6 +113,7 @@
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import EmojiPicker from '@/views/components/EmojiPicker.vue'
+import ReportDialog from '@/components/ReportDialog.vue'
 import { postComment, getComments, toggleCommentLike } from '@/api/comment.js'
 import { useUserStore } from '@/store/user.js'
 
@@ -170,6 +180,14 @@ const ensureLogin = () => {
     return false
   }
   return true
+}
+
+const reportVisible = ref(false)
+const reportTargetId = ref(undefined)
+const openReport = (item) => {
+  if (!ensureLogin()) return
+  reportTargetId.value = Number(item?.id)
+  reportVisible.value = true
 }
 
 const insertAt = (targetRef, emoji, which) => {
@@ -374,7 +392,7 @@ onMounted(() => {
 }
 
 .line-input:focus {
-  border-color: #6c5ce7;
+  border-color: #2563EB;
   background: #fff;
 }
 
@@ -404,7 +422,7 @@ onMounted(() => {
   height: 32px;
   padding: 0 16px;
   border-radius: 16px;
-  background: #6c5ce7;
+  background: #2563EB;
   color: #fff;
   font-size: 13px;
   cursor: pointer;
@@ -478,7 +496,19 @@ onMounted(() => {
 
 .link:hover,
 .link.on {
-  color: #6c5ce7;
+  color: #2563EB;
+}
+.link.danger:hover {
+  color: var(--danger);
+}
+.link.danger:hover {
+  color: var(--danger);
+}
+.link.danger:hover {
+  color: var(--danger);
+}
+.link.danger:hover {
+  color: var(--danger);
 }
 
 .reply-editor {

@@ -18,10 +18,14 @@
         <div class="msg-body">
           <div class="bubble">
             <span v-if="msg.msgType === 1" class="text">{{ msg.content }}</span>
-            <img
+            <el-image
                 v-else-if="msg.msgType === 2"
                 :src="msg.content"
                 class="image"
+                fit="cover"
+                :preview-src-list="[msg.content]"
+                preview-teleported
+                hide-on-click-modal
                 alt="图片消息"
             />
             <span v-else class="text">{{ msg.content }}</span>
@@ -116,11 +120,11 @@ const formatTime = (timeValue) => {
 }
 
 .msg-row.self .bubble {
-  background: #6c5ce7;
+  background: #2563EB;
   color: #fff;
-  border-color: #6c5ce7;
+  border-color: #2563EB;
   border-top-right-radius: 4px;
-  box-shadow: 0 2px 10px rgba(108, 92, 231, 0.28);
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.28);
 }
 
 .image {
@@ -128,7 +132,16 @@ const formatTime = (timeValue) => {
   max-height: 220px;
   border-radius: 8px;
   display: block;
-  object-fit: cover;
+  cursor: pointer;
+  background: #f5f6f8;
+}
+
+/* 图片消息气泡去掉多余内边距 */
+.bubble:has(.image) {
+  padding: 4px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .time {

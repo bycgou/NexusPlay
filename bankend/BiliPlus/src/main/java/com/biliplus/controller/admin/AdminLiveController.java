@@ -26,6 +26,9 @@ public class AdminLiveController {
     @Autowired
     private WalletService walletService;
 
+    @Autowired
+    private com.biliplus.service.AdminOperationLogService adminOperationLogService;
+
     @GetMapping("/rooms")
     public Result<PageResult> rooms(@RequestParam(required = false) Integer status,
                                     @RequestParam(defaultValue = "1") Integer page,
@@ -37,6 +40,7 @@ public class AdminLiveController {
     public Result<String> forceStop(@PathVariable Long id) {
         try {
             liveRoomService.forceStop(id);
+            adminOperationLogService.record("live.forceStop", "live_room", id, null);
             return Result.success("已强制下播");
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -58,6 +62,7 @@ public class AdminLiveController {
     public Result<String> banHost(@PathVariable Long id) {
         try {
             liveRoomService.banHost(id);
+            adminOperationLogService.record("live.banHost", "live_room", id, null);
             return Result.success("已强制下播并封禁主播");
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -69,6 +74,7 @@ public class AdminLiveController {
     public Result<String> unbanHost(@PathVariable Long userId) {
         try {
             liveRoomService.unbanHost(userId);
+            adminOperationLogService.record("live.unbanHost", "user", userId, null);
             return Result.success("已解除封禁");
         } catch (Exception e) {
             return Result.error(e.getMessage());

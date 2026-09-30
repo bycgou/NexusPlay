@@ -37,12 +37,12 @@ public interface PeopleUserMapper {
     @Select("select * from user where nickname=#{name}")
     User getUserByName(String name);
 
-    /** 昵称/用户名模糊搜索（公开，只返回安全字段） */
+    /** 昵称/用户名模糊搜索（公开，只返回安全字段；keyword 须在服务层做 LIKE 转义） */
     @Select("SELECT id, username, nickname, avatar, signature, create_time " +
             "FROM user " +
             "WHERE status = 1 AND (nickname LIKE CONCAT('%', #{keyword}, '%') " +
             "   OR username LIKE CONCAT('%', #{keyword}, '%')) " +
-            "ORDER BY id DESC")
+            "ORDER BY id DESC LIMIT 50")
     List<User> searchByKeyword(@Param("keyword") String keyword);
 
     @Select("select * from video where user_id = #{userId} and status <> -1 order by create_time desc")

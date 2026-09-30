@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import flvjs from 'flv.js'
@@ -317,7 +317,7 @@ onBeforeUnmount(destroyReplayPlayer)
   padding: 2px 8px;
   border-radius: 4px;
 }
-.live-tag { background: #fb7299; }
+.live-tag { background: #2563EB; }
 .replay-tag { background: #409eff; }
 .online {
   position: absolute;

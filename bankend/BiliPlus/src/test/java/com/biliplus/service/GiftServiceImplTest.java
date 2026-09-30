@@ -49,6 +49,9 @@ class GiftServiceImplTest {
     private WalletService walletService;
 
     @Mock
+    private EventLogService eventLogService;
+
+    @Mock
     private LiveWebSocketHandler liveWebSocketHandler;
 
     @Spy

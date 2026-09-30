@@ -6,7 +6,7 @@ const routes: RouteRecordRaw[] = [
         path: '/Home',
         name: 'Home',
         component: () => import('@/views/Home.vue'),
-        redirect: '/Home/VideoShenHe',
+        redirect: '/Home/Dashboard',
         children: [
             {
                 path: 'VideoShenHe',
@@ -67,6 +67,36 @@ const routes: RouteRecordRaw[] = [
                 name: 'ReportManage',
                 component: () => import('@/views/Report/ReportManage.vue'),
                 meta: { title: '举报处理' }
+            },
+            {
+                path: 'Dashboard',
+                name: 'Dashboard',
+                component: () => import('@/views/Dashboard/Dashboard.vue'),
+                meta: { title: '数据看板' }
+            },
+            {
+                path: 'OperationLog',
+                name: 'OperationLog',
+                component: () => import('@/views/OperationLog/OperationLog.vue'),
+                meta: { title: '操作日志' }
+            },
+            {
+                path: 'SensitiveWord',
+                name: 'SensitiveWordManage',
+                component: () => import('@/views/SensitiveWord/SensitiveWordManage.vue'),
+                meta: { title: '敏感词治理' }
+            },
+            {
+                path: 'User',
+                name: 'UserManage',
+                component: () => import('@/views/User/UserManage.vue'),
+                meta: { title: '用户管理' }
+            },
+            {
+                path: 'Governance',
+                name: 'GovernanceDashboard',
+                component: () => import('@/views/Governance/GovernanceDashboard.vue'),
+                meta: { title: '治理报表' }
             },
             {
                 path: 'Notification',

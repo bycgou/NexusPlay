@@ -57,6 +57,9 @@ public class LiveRoomServiceImpl implements LiveRoomService {
     private LiveReplayService liveReplayService;
 
     @Autowired
+    private com.biliplus.service.EventLogService eventLogService;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     @Override
@@ -144,6 +147,8 @@ public class LiveRoomServiceImpl implements LiveRoomService {
         liveUser.setEnterTime(LocalDateTime.now());
         liveUserMapper.insert(liveUser);
         liveRoomMapper.incrViewCount(roomId, 1);
+        eventLogService.record(com.biliplus.constant.EventType.LIVE_ENTER, userId,
+                com.biliplus.constant.EventType.TARGET_LIVE_ROOM, roomId);
         return decorate(LiveRoomVO.from(liveRoomMapper.selectById(roomId)));
     }
 

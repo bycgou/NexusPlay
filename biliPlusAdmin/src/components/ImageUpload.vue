@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'
@@ -107,7 +107,7 @@ const handleChange = async (e: Event) => {
   justify-content: center;
 }
 .preview:hover {
-  border-color: #fb7299;
+  border-color: #2563EB;
 }
 .img {
   width: 100%;

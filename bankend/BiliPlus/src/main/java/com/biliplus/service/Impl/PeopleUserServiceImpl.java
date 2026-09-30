@@ -15,6 +15,8 @@ import com.biliplus.pojo.entity.Video;
 import com.biliplus.pojo.vo.MyVideoVO;
 import com.biliplus.pojo.vo.VideoUploadVO;
 import com.biliplus.service.PeopleUserService;
+import com.biliplus.service.UserPenaltyService;
+import com.biliplus.utils.LoginRateLimiter;
 import com.biliplus.utils.UserContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -57,6 +59,15 @@ public class PeopleUserServiceImpl implements PeopleUserService {
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
+    @Autowired
+    private LoginRateLimiter loginRateLimiter;
+
+    @Autowired
+    private UserPenaltyService userPenaltyService;
+
+    @org.springframework.beans.factory.annotation.Value("${app.external-url:}")
+    private String externalUrl;
+
     // 登录
 
 
@@ -78,6 +89,13 @@ public class PeopleUserServiceImpl implements PeopleUserService {
             return null;
         }
 
+        // 登录限速：同邮箱 5 次 / 15 分钟
+        String rlKey = "people-login:" + email.trim().toLowerCase();
+        if (!loginRateLimiter.allowAccountLogin(rlKey)) {
+            log.warn("登录触发限速 email={}", email);
+            throw new BusinessException("尝试次数过多，请稍后再试");
+        }
+
         // 调用mapper层方法
         User user = peopleUserMapper.userlogin(email);
         if (user == null || user.getEmail() == null) {
@@ -89,6 +107,17 @@ public class PeopleUserServiceImpl implements PeopleUserService {
         if (!passwordEncoder.matches(password, user.getPassword())) {
             log.warn("登录失败：密码错误, email={}", email);
             return null;
+        }
+        loginRateLimiter.reset(rlKey);
+
+        // 封禁 / 禁用账号禁止登录
+        if (user.getStatus() != null && user.getStatus() == 0) {
+            log.warn("登录失败：账号已禁用, email={}", email);
+            throw new BusinessException("账号已被封禁，如有疑问请联系管理员");
+        }
+        if (userPenaltyService.isBanned(user.getId())) {
+            log.warn("登录失败：账号处于封禁期, email={}, userId={}", email, user.getId());
+            throw new BusinessException("账号已被封禁，如有疑问请联系管理员");
         }
 
         // 返回entity 实体 登陆成功
@@ -216,8 +245,34 @@ public class PeopleUserServiceImpl implements PeopleUserService {
         } catch (Exception e) {
             log.warn("查询粉丝/关注数失败: {}", e.getMessage());
         }
-        log.info("查询用户信息成功:{}", userDTO);
+        // 仅本人可见 email/phone
+        Long currentUserId = UserContext.getCurrentUserId();
+        if (currentUserId == null || !currentUserId.equals(userId)) {
+            userDTO.setEmail(null);
+            userDTO.setPhone(null);
+        }
+        userDTO.setAvatar(com.biliplus.utils.MediaUrlUtil.rewrite(userDTO.getAvatar(), externalUrl));
         return userDTO;
+    }
+
+    @Override
+    public com.biliplus.pojo.vo.UserPublicVO getPublicById(Long userId) {
+        User user = peopleUserMapper.getUserById(userId);
+        if (user == null) {
+            return null;
+        }
+        com.biliplus.pojo.vo.UserPublicVO vo = new com.biliplus.pojo.vo.UserPublicVO();
+        vo.setId(user.getId());
+        vo.setUsername(user.getUsername());
+        vo.setNickname(user.getNickname());
+        vo.setAvatar(com.biliplus.utils.MediaUrlUtil.rewrite(user.getAvatar(), externalUrl));
+        vo.setSignature(user.getSignature());
+        try {
+            vo.setFansCount(userFollowMapper.countFans(userId));
+            vo.setFollowingCount(userFollowMapper.countFollowing(userId));
+        } catch (Exception ignored) {
+        }
+        return vo;
     }
 
     @Override
@@ -409,31 +464,33 @@ public class PeopleUserServiceImpl implements PeopleUserService {
     }
 
     @Override
-    public java.util.List<UserDTO> searchUsers(String keyword, Integer limit) {
-        String kw = keyword == null ? "" : keyword.trim();
-        if (kw.isEmpty()) {
+    public java.util.List<com.biliplus.pojo.vo.UserPublicVO> searchUsers(String keyword, Integer limit) {
+        String raw = keyword == null ? "" : keyword.trim();
+        if (raw.isEmpty()) {
             return java.util.Collections.emptyList();
         }
+        // LIKE 转义，防止 % _ 通配扫全表
+        String kw = com.biliplus.utils.LikeEscape.escape(raw);
         int max = limit == null || limit < 1 ? 20 : Math.min(limit, 50);
         java.util.List<User> users = peopleUserMapper.searchByKeyword(kw);
         if (users == null || users.isEmpty()) {
             return java.util.Collections.emptyList();
         }
-        java.util.List<UserDTO> result = new java.util.ArrayList<>();
+        java.util.List<com.biliplus.pojo.vo.UserPublicVO> result = new java.util.ArrayList<>();
         for (int i = 0; i < users.size() && i < max; i++) {
             User u = users.get(i);
-            UserDTO dto = new UserDTO();
-            dto.setId(u.getId());
-            dto.setUsername(u.getUsername());
-            dto.setNickname(u.getNickname());
-            dto.setAvatar(u.getAvatar());
-            dto.setSignature(u.getSignature());
+            com.biliplus.pojo.vo.UserPublicVO vo = new com.biliplus.pojo.vo.UserPublicVO();
+            vo.setId(u.getId());
+            vo.setUsername(u.getUsername());
+            vo.setNickname(u.getNickname());
+            vo.setAvatar(com.biliplus.utils.MediaUrlUtil.rewrite(u.getAvatar(), externalUrl));
+            vo.setSignature(u.getSignature());
             try {
-                dto.setFansCount(userFollowMapper.countFans(u.getId()));
+                vo.setFansCount(userFollowMapper.countFans(u.getId()));
             } catch (Exception ignored) {
-                dto.setFansCount(0L);
+                vo.setFansCount(0L);
             }
-            result.add(dto);
+            result.add(vo);
         }
         return result;
     }
