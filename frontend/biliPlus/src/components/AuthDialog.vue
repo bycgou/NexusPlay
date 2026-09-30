@@ -12,6 +12,7 @@ const loginFormRef = ref()
 const registerFormRef = ref()
 const loginLoading = ref(false)
 const registerLoading = ref(false)
+const sendLoading = ref(false)
 
 const loginForm = reactive({ email: '', password: '' })
 const registerForm = reactive({
@@ -21,6 +22,9 @@ const registerForm = reactive({
     imageCaptcha: '',
     emailCaptcha: ''
 })
+
+const captchaImg = ref('')
+const captchaId = ref('')
 
 const loginRules = reactive({
     email: [
@@ -56,11 +60,35 @@ const registerRules = reactive({
     emailCaptcha: [{ required: true, message: '请输入邮箱验证码', trigger: 'blur' }]
 })
 
+// 获取图形验证码（data:image/png;base64,...）
+const refreshCaptcha = async () => {
+    try {
+        const res = await axios.get('/api/pp/people/captcha/image')
+        const data = res.data?.data
+        if (res.data?.code === 1 && data?.imageBase64) {
+            captchaImg.value = data.imageBase64
+            captchaId.value = data.captchaId || ''
+            registerForm.imageCaptcha = ''
+        } else {
+            captchaImg.value = ''
+            captchaId.value = ''
+            ElMessage.error(res.data?.msg || '获取图形验证码失败')
+        }
+    } catch (e: any) {
+        captchaImg.value = ''
+        captchaId.value = ''
+        ElMessage.error(e?.response?.data?.msg || '获取图形验证码失败，请重试')
+    }
+}
+
 watch(
     () => [authPrompt.visible, authPrompt.mode] as const,
     ([visible, m]) => {
         if (visible) {
             mode.value = m
+            if (m === 'register') {
+                refreshCaptcha()
+            }
         }
     },
     { immediate: true }
@@ -73,6 +101,9 @@ const handleClose = () => {
 const switchMode = (m: 'login' | 'register') => {
     mode.value = m
     authPrompt.mode = m
+    if (m === 'register') {
+        refreshCaptcha()
+    }
 }
 
 const handleLogin = async () => {
@@ -148,18 +179,35 @@ const sendEmailCaptcha = async () => {
         ElMessage.warning('请先输入邮箱')
         return
     }
+    if (!registerForm.imageCaptcha) {
+        ElMessage.warning('请输入图形验证码')
+        return
+    }
+    if (!captchaId.value) {
+        ElMessage.warning('请先获取图形验证码')
+        await refreshCaptcha()
+        return
+    }
+    sendLoading.value = true
     try {
         const res = await axios.post('/api/pp/people/email', {
             email: registerForm.email,
+            captchaId: captchaId.value,
             imageCaptcha: registerForm.imageCaptcha
         })
         if (res.data?.code === 1) {
             ElMessage.success('邮箱验证码已发送')
+            // 图形验证码一次性，发送后刷新
+            await refreshCaptcha()
         } else {
             ElMessage.error(res.data?.msg || '发送失败')
+            await refreshCaptcha()
         }
     } catch (e: any) {
         ElMessage.error(e?.response?.data?.msg || '发送失败')
+        await refreshCaptcha()
+    } finally {
+        sendLoading.value = false
     }
 }
 </script>
@@ -237,12 +285,23 @@ const sendEmailCaptcha = async () => {
         />
       </el-form-item>
       <el-form-item prop="imageCaptcha">
-        <el-input v-model="registerForm.imageCaptcha" placeholder="图形验证码" size="large" />
+        <div class="captcha-row">
+          <el-input
+              v-model="registerForm.imageCaptcha"
+              placeholder="图形验证码"
+              size="large"
+              @keyup.enter="sendEmailCaptcha"
+          />
+          <div class="captcha-img-box" title="点击刷新" @click="refreshCaptcha">
+            <img v-if="captchaImg" :src="captchaImg" alt="图形验证码" class="captcha-img" />
+            <span v-else class="captcha-placeholder" @click="refreshCaptcha">点击获取</span>
+          </div>
+        </div>
       </el-form-item>
       <el-form-item prop="emailCaptcha">
         <div class="captcha-row">
           <el-input v-model="registerForm.emailCaptcha" placeholder="邮箱验证码" size="large" />
-          <el-button size="large" @click="sendEmailCaptcha">发送验证码</el-button>
+          <el-button size="large" :loading="sendLoading" @click="sendEmailCaptcha">发送验证码</el-button>
         </div>
       </el-form-item>
       <el-button
@@ -277,8 +336,32 @@ const sendEmailCaptcha = async () => {
   display: flex;
   gap: 8px;
   width: 100%;
+  align-items: center;
 }
 .captcha-row .el-input {
   flex: 1;
+}
+.captcha-img-box {
+  width: 120px;
+  height: 40px;
+  flex-shrink: 0;
+  border: 1px solid var(--line, #dcdfe6);
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f7f8fa;
+}
+.captcha-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.captcha-placeholder {
+  font-size: 12px;
+  color: var(--mist, #909399);
 }
 </style>
