@@ -67,3 +67,6 @@ bankend/BiliPlus/backend-start*.log
 extract_paths.py
 pentest_probe.py
 frontend.html
+
+captcha_*.png
+*_sample.png
