@@ -1,0 +1,33 @@
+package com.biliplus.controller.admin;
+
+import com.biliplus.pojo.entity.AdminOperationLog;
+import com.biliplus.result.PageResult;
+import com.biliplus.result.Result;
+import com.biliplus.service.AdminStatsService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+/** 平台数据看板：今日/累计 KPI 与近 N 日趋势 */
+@Slf4j
+@RestController
+@RequestMapping("/admin/stats")
+public class AdminStatsController {
+
+    @Autowired
+    private AdminStatsService adminStatsService;
+
+    /** 今日/累计：用户、投稿、待审、在线直播、礼物收入、弹幕、评论、待处理举报 */
+    @GetMapping("/overview")
+    public Result<Map<String, Object>> overview() {
+        return Result.success(adminStatsService.overview());
+    }
+
+    /** 近 N 日注册 / 投稿 / 礼物曲线 */
+    @GetMapping("/trend")
+    public Result<Map<String, Object>> trend(@RequestParam(defaultValue = "7") Integer days) {
+        return Result.success(adminStatsService.trend(days == null ? 7 : days));
+    }
+}

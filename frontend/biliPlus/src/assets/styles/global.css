@@ -3,11 +3,11 @@
    ============================================ */
 
 :root {
-  /* 品牌色 */
-  --brand: #6C5CE7;
-  --brand-dark: #5A4BD1;
-  --brand-light: #A29BFE;
-  --brand-bg: rgba(108, 92, 231, 0.08);
+  /* 品牌色（蓝白） */
+  --brand: #2563EB;
+  --brand-dark: #1D4ED8;
+  --brand-light: #60A5FA;
+  --brand-bg: rgba(37, 99, 235, 0.08);
 
   /* 中性色 */
   --ink: #1e293b;
@@ -35,7 +35,7 @@
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
-  --shadow-hover: 0 12px 40px rgba(108, 92, 231, 0.15);
+  --shadow-hover: 0 12px 40px rgba(37, 99, 235, 0.15);
 
   /* 间距 */
   --space-xs: 4px;
@@ -64,10 +64,10 @@
 
 /* 暗色模式 */
 [data-theme="dark"] {
-  --brand: #7c6ef0;
-  --brand-dark: #6a5ce0;
-  --brand-light: #8b7cf7;
-  --brand-bg: rgba(124, 110, 240, 0.12);
+  --brand: #3B82F6;
+  --brand-dark: #2563EB;
+  --brand-light: #60A5FA;
+  --brand-bg: rgba(59, 130, 246, 0.12);
 
   --ink: #e2e8f0;
   --ink-secondary: #cbd5e1;
@@ -86,7 +86,7 @@
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.4);
-  --shadow-hover: 0 12px 40px rgba(124, 110, 240, 0.2);
+  --shadow-hover: 0 12px 40px rgba(59, 130, 246, 0.2);
 
   color-scheme: dark;
 }

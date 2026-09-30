@@ -38,6 +38,12 @@ public class DynamicServiceImpl implements DynamicService {
     @Autowired
     private VideoMapper videoMapper;
 
+    @Autowired
+    private com.biliplus.service.SensitiveWordService sensitiveWordService;
+
+    @Autowired
+    private com.biliplus.service.UserPenaltyService userPenaltyService;
+
     @Override
     @Transactional
     public Dynamic publishText(Long userId, String content) {
@@ -49,6 +55,11 @@ public class DynamicServiceImpl implements DynamicService {
         if (trimmed.length() > MAX_CONTENT_LENGTH) {
             throw new BusinessException("动态内容不能超过" + MAX_CONTENT_LENGTH + "字");
         }
+        // 禁言中的用户不能发动态（参数校验之后再做权限与内容检查）
+        if (userPenaltyService.isMuted(userId)) {
+            throw new BusinessException("你已被禁言，暂时无法发动态");
+        }
+        sensitiveWordService.enforce(content, userId, "dynamic", null);
 
         Dynamic dynamic = new Dynamic();
         dynamic.setUserId(userId);

@@ -55,6 +55,9 @@ public class GiftServiceImpl implements GiftService {
     private WalletService walletService;
 
     @Autowired
+    private com.biliplus.service.EventLogService eventLogService;
+
+    @Autowired
     private LiveWebSocketHandler liveWebSocketHandler;
 
     @Autowired
@@ -221,6 +224,12 @@ public class GiftServiceImpl implements GiftService {
         walletService.insertTransaction(room.getUserId(), WalletTx.TYPE_HOST_INCOME, total, hostBalanceAfter,
                 WalletTx.BIZ_HOST_INCOME, record.getId(),
                 "收到 " + senderName + " 的 " + gift.getName() + " x" + count);
+
+        // 打赏是推荐里权重最高的互动信号，extra 记金额便于特征工程
+        eventLogService.record(com.biliplus.constant.EventType.GIFT_SEND, senderId,
+                com.biliplus.constant.EventType.TARGET_LIVE_ROOM, roomId,
+                null, "{\"giftId\":" + gift.getId() + ",\"total\":" + total + "}",
+                com.biliplus.constant.EventType.SOURCE_WEB);
 
         try {
             ObjectNode node = objectMapper.createObjectNode();

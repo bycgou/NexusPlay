@@ -39,8 +39,8 @@ class VideoServiceImplTest {
     void recommend_shouldReturnPageResult() {
         Page<GetListVideoVO> page = new Page<>(1, 10);
         page.setTotal(0);
-        when(videoMapper.recommend()).thenReturn(page);
-        PageResult result = videoService.recommend();
+        when(videoMapper.recommend(0, 20)).thenReturn(page);
+        PageResult result = videoService.recommend(1, 20);
         assertNotNull(result);
         assertEquals(0L, result.getTotal());
     }

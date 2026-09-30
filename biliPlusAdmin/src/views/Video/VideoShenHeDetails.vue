@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
@@ -194,7 +194,7 @@ onMounted(loadDetail)
     </template>
     <el-empty v-else-if="!loading" description="未找到视频" />
 
-    <el-dialog v-model="rejectVisible" title="审核不通过" width="480px" :close-on-click-modal="false">
+    <el-dialog v-model="rejectVisible" title="审核不通过" width="480px" :close-on-click-modal="false" append-to-body>
       <div class="reject-hint">请填写不通过原因，用户可在「设置 → 稿件」中查看。</div>
       <el-input
           v-model="rejectReason"

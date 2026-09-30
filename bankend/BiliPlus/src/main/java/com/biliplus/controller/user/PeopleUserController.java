@@ -36,6 +36,8 @@ public class PeopleUserController {
     private EmailCodeService emailCodeService;
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+    @Autowired
+    private com.biliplus.utils.LoginRateLimiter loginRateLimiter;
 
     @Autowired
     PeopleUserService peopleUserService;
@@ -75,43 +77,38 @@ public class PeopleUserController {
         String captchaId = userRegisterDTO.getCaptchaId();
         String ImageCaptcha = userRegisterDTO.getImageCaptcha();
         String email = userRegisterDTO.getEmail();
-        log.info("用户输入的邮箱地址{},验证码key{},验证码值{}",email,captchaId,ImageCaptcha);
+        // 日志脱敏：不输出验证码明文
+        log.info("发送邮箱验证码请求: email={}, captchaId={}", email, captchaId);
 
-
-        // 1. 定义Redis中图片验证码的key（与验证码生成时的key规则一致）
-        String imageCaptchaRedisKey = AllConstant.CAPTCHA_REDIS_PREFIX + captchaId;
+        if (email == null || email.trim().isEmpty()) {
+            return Result.error("邮箱不能为空");
+        }
+        if (captchaId == null || captchaId.trim().isEmpty()) {
+            return Result.error("图片验证码已过期，请重新输入");
+        }
 
         try {
-            // 2. 从Redis获取图片验证码（JWT架构无Session，完全依赖Redis）
-            String storedImageCode = stringRedisTemplate.opsForValue().get(imageCaptchaRedisKey);
-            log.info("图片验证码校验 - 用户输入：{}，Redis存储：{}，邮箱：{}",
-                    ImageCaptcha, storedImageCode, email);
-
-            // 3. 图片验证码校验逻辑
-            if (storedImageCode == null) {
+            // 先验码：一次性验证码，失败即作废，防止爆破
+            if (ImageCaptcha == null || ImageCaptcha.trim().isEmpty()) {
                 return Result.error("图片验证码已过期，请重新输入");
             }
-            // 忽略大小写校验，提升用户体验
-            if (!ImageCaptcha.equalsIgnoreCase(storedImageCode)) {
+            if (!validateCodeService.validateCode(captchaId.trim(), ImageCaptcha.trim())) {
                 return Result.error("图片验证码错误");
             }
 
-            // 4. 校验通过：发送邮箱验证码（调用服务层逻辑）
-            emailCodeService.sendEmailCode(email);
-
-            // 5. 关键修正：删除Redis中的图片验证码（防止重复使用，原代码删错了storedImageCode值，需删key）
-            Boolean deleteSuccess = stringRedisTemplate.delete(imageCaptchaRedisKey);
-            if (deleteSuccess) {
-                log.info("图片验证码已从Redis删除，key：{}", imageCaptchaRedisKey);
+            // 验码通过后再扣发信额度，避免错误验证码占额度
+            String mailKey = email.trim().toLowerCase();
+            if (!loginRateLimiter.allow("mail-60s:" + mailKey, 1, java.time.Duration.ofSeconds(60))
+                    || !loginRateLimiter.allow("mail-day:" + mailKey, 5, java.time.Duration.ofDays(1))) {
+                return Result.error("发送过于频繁，请稍后再试");
             }
 
-            // 6. 返回成功响应（无数据返回，按ResponseVO规范封装）
+            emailCodeService.sendEmailCode(email);
             return Result.success("邮箱验证码已发送，请查收");
 
         } catch (Exception e) {
-            // 业务异常：返回具体错误信息（如验证码过期、不正确）
-            log.warn("发送邮箱验证码失败（业务异常）：{}", e.getMessage());
-            return Result.error(e.getMessage());
+            log.warn("发送邮箱验证码失败: {}", e.getMessage());
+            return Result.error("发送失败，请稍后再试");
         }
 
     }
@@ -130,7 +127,7 @@ public class PeopleUserController {
             return Result.success();
         } catch (Exception e) {
             log.warn("用户注册失败: email={}, error={}", email, e.getMessage());
-            return Result.error(e.getMessage());
+            return Result.error(e instanceof com.biliplus.exception.BusinessException ? e.getMessage() : "请求处理失败，请稍后再试");
         }
     }
 
@@ -138,14 +135,50 @@ public class PeopleUserController {
      * 登录
      */
     @PostMapping("/login")
-    public Result<PoepleLoginVO> login(@RequestBody UserRegisterDTO userRegisterDTO) {
+    public org.springframework.http.ResponseEntity<Result<PoepleLoginVO>> login(
+            @RequestBody UserRegisterDTO userRegisterDTO,
+            jakarta.servlet.http.HttpServletRequest request) {
         String email = userRegisterDTO.getEmail();
         // 日志脱敏：不输出密码
         log.info("用户登录请求: email={}", email);
+
+        String ip = com.biliplus.utils.ClientIpUtil.resolve(request);
+        if (!loginRateLimiter.allowLoginIp(ip)) {
+            log.warn("登录 IP 触发限速 ip={}", ip);
+            return org.springframework.http.ResponseEntity
+                    .status(429)
+                    .body(Result.error("尝试次数过多，请稍后再试"));
+        }
+
+        // 连续失败后强制图片验证码，降低爆破成本
+        if (email != null && !email.trim().isEmpty()) {
+            String failKey = "login-fail:" + email.trim().toLowerCase();
+            if (loginRateLimiter.count(failKey) >= 3) {
+                String captchaId = userRegisterDTO.getCaptchaId();
+                String imageCaptcha = userRegisterDTO.getImageCaptcha();
+                if (captchaId == null || captchaId.trim().isEmpty()
+                        || imageCaptcha == null || imageCaptcha.trim().isEmpty()) {
+                    return org.springframework.http.ResponseEntity
+                            .status(429)
+                            .body(Result.error("请完成图片验证码后继续登录"));
+                }
+                if (!validateCodeService.validateCode(captchaId.trim(), imageCaptcha.trim())) {
+                    return org.springframework.http.ResponseEntity
+                            .status(429)
+                            .body(Result.error("图片验证码错误"));
+                }
+            }
+        }
+
         // 调用login方法
         User user = peopleUserService.userlogin(userRegisterDTO);
         if (user == null) {
-            return Result.error("用户名或密码错误");
+            if (email != null && !email.trim().isEmpty()) {
+                loginRateLimiter.allow("login-fail:" + email.trim().toLowerCase(), 50, java.time.Duration.ofMinutes(15));
+            }
+            return org.springframework.http.ResponseEntity
+                    .status(401)
+                    .body(Result.error("用户名或密码错误"));
         }
         // 生成jwt令牌
         Map<String, Object> claims = new HashMap<>();
@@ -168,8 +201,11 @@ public class PeopleUserController {
         poepleLoginVO.setStatus(user.getStatus());
         poepleLoginVO.setToken(token);
         log.info("用户登录成功: id={}, email={}", user.getId(), email);
+        if (email != null && !email.trim().isEmpty()) {
+            loginRateLimiter.reset("login-fail:" + email.trim().toLowerCase());
+        }
 
-        return Result.success(poepleLoginVO);
+        return org.springframework.http.ResponseEntity.ok(Result.success(poepleLoginVO));
     }
 
     // 投稿视频
@@ -204,21 +240,45 @@ public class PeopleUserController {
             return Result.success();
         } catch (Exception e) {
             log.warn("修改密码失败 userId={}, msg={}", userId, e.getMessage());
-            return Result.error(e.getMessage());
+            return Result.error(e instanceof com.biliplus.exception.BusinessException ? e.getMessage() : "请求处理失败，请稍后再试");
         }
     }
 
    // 根据id查询用户信息
     @GetMapping("/user/{userId}")
-    public Result<UserDTO> getUserById(@PathVariable Long userId){
+    public org.springframework.http.ResponseEntity<Result<?>> getUserById(@PathVariable Long userId){
         log.info("根据id查询用户信息:{}", userId);
-        UserDTO userDTO = peopleUserService.getUserById(userId);
-        if(userDTO == null){
-            return Result.error("用户不存在");
+        Long currentUserId = com.biliplus.utils.UserContext.getCurrentUserId();
+        // 本人可看完整资料，他人只返回公开字段
+        if (currentUserId != null && currentUserId.equals(userId)) {
+            UserDTO userDTO = peopleUserService.getUserById(userId);
+            if(userDTO == null){
+                return org.springframework.http.ResponseEntity.status(404).body(Result.error("用户不存在"));
+            }
+            return org.springframework.http.ResponseEntity.ok(Result.success(userDTO));
         }
-        return Result.success(userDTO);
+        com.biliplus.pojo.vo.UserPublicVO pub = peopleUserService.getPublicById(userId);
+        if(pub == null){
+            return org.springframework.http.ResponseEntity.status(404).body(Result.error("用户不存在"));
+        }
+        return org.springframework.http.ResponseEntity.ok(Result.success(pub));
     }
 
+    /** 当前登录用户完整资料（含 email/phone，仅本人） */
+    @GetMapping("/me")
+    public org.springframework.http.ResponseEntity<Result<UserDTO>> getMe() {
+        Long userId = com.biliplus.utils.UserContext.getCurrentUserId();
+        if (userId == null) {
+            return org.springframework.http.ResponseEntity
+                    .status(401)
+                    .body(Result.error("请先登录"));
+        }
+        UserDTO userDTO = peopleUserService.getUserById(userId);
+        if (userDTO == null) {
+            return org.springframework.http.ResponseEntity.status(404).body(Result.error("用户不存在"));
+        }
+        return org.springframework.http.ResponseEntity.ok(Result.success(userDTO));
+    }
 
     // 根据name查询用户信息
     @GetMapping("/username")
@@ -233,14 +293,14 @@ public class PeopleUserController {
 
     /** 搜索用户（昵称/用户名模糊，公开） */
     @GetMapping("/search")
-    public Result<java.util.List<UserDTO>> searchUsers(
+    public Result<java.util.List<com.biliplus.pojo.vo.UserPublicVO>> searchUsers(
             @RequestParam String keyword,
             @RequestParam(required = false) Integer limit) {
         log.info("搜索用户 keyword={}", keyword);
         try {
             return Result.success(peopleUserService.searchUsers(keyword, limit));
         } catch (Exception e) {
-            return Result.error(e.getMessage());
+            return Result.error(e instanceof com.biliplus.exception.BusinessException ? e.getMessage() : "请求处理失败，请稍后再试");
         }
     }
 
@@ -252,7 +312,7 @@ public class PeopleUserController {
         try {
             return Result.success(peopleUserService.listMyVideos(userId));
         } catch (Exception e) {
-            return Result.error(e.getMessage());
+            return Result.error(e instanceof com.biliplus.exception.BusinessException ? e.getMessage() : "请求处理失败，请稍后再试");
         }
     }
 
@@ -266,7 +326,7 @@ public class PeopleUserController {
             peopleUserService.updateMyVideo(userId, id, dto);
             return Result.success();
         } catch (Exception e) {
-            return Result.error(e.getMessage());
+            return Result.error(e instanceof com.biliplus.exception.BusinessException ? e.getMessage() : "请求处理失败，请稍后再试");
         }
     }
 
@@ -279,7 +339,7 @@ public class PeopleUserController {
             peopleUserService.deleteMyVideo(userId, id);
             return Result.success();
         } catch (Exception e) {
-            return Result.error(e.getMessage());
+            return Result.error(e instanceof com.biliplus.exception.BusinessException ? e.getMessage() : "请求处理失败，请稍后再试");
         }
     }
 
@@ -292,7 +352,7 @@ public class PeopleUserController {
             peopleUserService.resubmitMyVideo(userId, id);
             return Result.success();
         } catch (Exception e) {
-            return Result.error(e.getMessage());
+            return Result.error(e instanceof com.biliplus.exception.BusinessException ? e.getMessage() : "请求处理失败，请稍后再试");
         }
     }
 

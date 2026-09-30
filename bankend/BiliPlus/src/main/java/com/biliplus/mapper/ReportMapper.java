@@ -10,6 +10,7 @@ import org.apache.ibatis.annotations.Update;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface ReportMapper {
@@ -56,4 +57,41 @@ public interface ReportMapper {
                @Param("handlerId") Long handlerId,
                @Param("remark") String remark,
                @Param("handleTime") LocalDateTime handleTime);
+
+    // ===== 治理报表：举报 SLA =====
+
+    /** 总量/待处理/超时（>24h 未处理）/平均处理时长（分钟） */
+    @Select("SELECT COUNT(*) AS total, " +
+            "SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS pending, " +
+            "SUM(CASE WHEN status = 0 AND TIMESTAMPDIFF(HOUR, create_time, NOW()) > 24 THEN 1 ELSE 0 END) AS overdue, " +
+            "AVG(TIMESTAMPDIFF(MINUTE, create_time, handle_time)) AS avgHandleMinutes, " +
+            "SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS upheld, " +
+            "SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS rejected " +
+            "FROM report")
+    Map<String, Object> slaSummary();
+
+    /** 处理人工作量 */
+    @Select("SELECT handler_id AS handlerId, COUNT(*) AS cnt, " +
+            "SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS upheld " +
+            "FROM report WHERE handler_id IS NOT NULL AND status IN (1, 2) " +
+            "GROUP BY handler_id ORDER BY cnt DESC")
+    List<Map<String, Object>> handlerWorkload();
+
+    /** 近 N 日处理时效趋势（按天） */
+    @Select("SELECT DATE(create_time) AS day, COUNT(*) AS cnt, " +
+            "AVG(TIMESTAMPDIFF(MINUTE, create_time, handle_time)) AS avgHandleMinutes " +
+            "FROM report WHERE handle_time IS NOT NULL AND create_time >= #{from} " +
+            "GROUP BY DATE(create_time) ORDER BY day ASC")
+    List<Map<String, Object>> dailyTimeliness(@Param("from") LocalDateTime from);
+
+    /** 举报重复率分母/分子：被举报目标数 vs 被多次举报的目标数 */
+    @Select("SELECT COUNT(*) AS dupTargets FROM (" +
+            "  SELECT target_type, target_id FROM report " +
+            "  GROUP BY target_type, target_id HAVING COUNT(*) > 1) t")
+    Map<String, Object> duplicateSummary();
+
+    /** 举报类型分布 */
+    @Select("SELECT target_type AS targetType, reason, COUNT(*) AS cnt FROM report " +
+            "GROUP BY target_type, reason ORDER BY cnt DESC")
+    List<Map<String, Object>> reasonDistribution();
 }

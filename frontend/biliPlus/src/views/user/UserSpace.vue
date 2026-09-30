@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="user-space">
     <div v-if="loading" class="loading-wrap">
       <el-skeleton :rows="6" animated />
@@ -56,6 +56,7 @@
                 @click="handleFollow"
             >{{ followed ? '已关注' : '+ 关注' }}</el-button>
             <el-button round @click="goChat">私信</el-button>
+            <el-button round type="danger" plain @click="reportVisible = true">举报</el-button>
           </template>
         </div>
       </div>
@@ -63,6 +64,28 @@
       <!-- 内容区 -->
       <div class="content-card">
         <el-tabs v-model="activeTab" class="space-tabs" @tab-change="handleTabChange">
+          <el-tab-pane label="动态" name="dynamics">
+            <EmptyState
+                v-if="!dynamicsLoading && dynamics.length === 0"
+                icon="Promotion"
+                :title="isSelf ? '还没有动态' : 'TA 还没有动态'"
+                :description="isSelf ? '发一条文字动态，让大家知道你的近况' : '关注 TA，第一时间看到更新'"
+                :action-text="isSelf ? '去发动态' : ''"
+                @action="goDynamic"
+            />
+            <div v-else v-loading="dynamicsLoading" class="dyn-list">
+              <DynamicCard
+                  v-for="item in dynamics"
+                  :key="item.id"
+                  :item="item"
+                  :show-delete="isSelf"
+                  compact
+                  @like="handleDynamicLike"
+                  @delete="handleDynamicDelete"
+              />
+            </div>
+          </el-tab-pane>
+
           <el-tab-pane :label="`投稿 ${works.length ? `(${works.length})` : ''}`" name="works">
             <EmptyState
                 v-if="!worksLoading && works.length === 0"
@@ -114,13 +137,20 @@
     </template>
 
     <el-empty v-else description="用户不存在" />
+
+    <ReportDialog
+        v-model="reportVisible"
+        :target-type="4"
+        :target-id="Number(userId)"
+        title="举报该用户"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { getUserInfo } from '@/api/user'
 import { getVideoList } from '@/api/video'
 import {
@@ -129,14 +159,23 @@ import {
   getMyLikedVideos,
   getMyFavoriteVideos
 } from '@/api/interaction'
+import {
+  deleteDynamic,
+  getUserDynamics,
+  toggleDynamicLike
+} from '@/api/dynamic'
 import { useUserStore } from '@/store/user'
+import { useAuthPrompt } from '@/composables/useAuthPrompt'
 import VideoList from '@/views/home/Main/Video/VideoList.vue'
 import VideoItem from '@/views/home/Main/Video/VideoItem.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import DynamicCard from '@/components/DynamicCard.vue'
+import ReportDialog from '@/components/ReportDialog.vue'
 
 const defaultAvatar = 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
 const route = useRoute()
 const router = useRouter()
+const authPrompt = useAuthPrompt()
 const userStore = useUserStore()
 
 const loading = ref(false)
@@ -149,7 +188,10 @@ const profile = ref(null)
 const works = ref([])
 const liked = ref([])
 const favorited = ref([])
-const activeTab = ref('works')
+const dynamics = ref([])
+const dynamicsLoading = ref(false)
+const reportVisible = ref(false)
+const activeTab = ref('dynamics')
 
 const userId = computed(() => route.params.id)
 const isSelf = computed(() => String(userStore.userInfo?.id) === String(userId.value))
@@ -158,7 +200,7 @@ const workCount = computed(() => works.value.length)
 const ensureLogin = () => {
   if (!userStore.userInfo?.id) {
     ElMessage.warning('请先登录')
-    router.push('/login')
+    authPrompt.openLogin()
     return false
   }
   return true
@@ -305,7 +347,65 @@ const goChat = () => {
 const goSetting = () => router.push('/setting/profile')
 const goContribute = () => router.push('/contribute')
 
+const loadDynamics = async () => {
+  dynamicsLoading.value = true
+  try {
+    const res = await getUserDynamics(Number(userId.value), { page: 1, size: 20 })
+    if (res.code === 1) {
+      dynamics.value = res.data?.records || []
+    }
+  } catch (e) {
+    console.error(e)
+  } finally {
+    dynamicsLoading.value = false
+  }
+}
+
+const goDynamic = () => router.push('/dynamic')
+
+const handleDynamicLike = async (item) => {
+  if (!ensureLogin()) return
+  try {
+    const res = await toggleDynamicLike(item.id)
+    if (res.code === 1) {
+      item.liked = !!res.data?.liked
+      item.likeCount = Number(res.data?.likeCount) || 0
+    } else {
+      ElMessage.error(res.msg || '点赞失败')
+    }
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+const handleDynamicDelete = async (item) => {
+  if (!ensureLogin()) return
+  try {
+    await ElMessageBox.confirm('删除后该动态将不再展示，确定删除吗？', '删除动态', {
+      type: 'warning',
+      confirmButtonText: '删除',
+      cancelButtonText: '取消'
+    })
+  } catch {
+    return
+  }
+  try {
+    const res = await deleteDynamic(item.id)
+    if (res.code === 1) {
+      ElMessage.success('动态已删除')
+      dynamics.value = dynamics.value.filter((d) => d.id !== item.id)
+    } else {
+      ElMessage.error(res.msg || '删除失败')
+    }
+  } catch (e) {
+    console.error(e)
+  }
+}
+
 const handleTabChange = (name) => {
+  if (name === 'dynamics' && dynamics.value.length === 0 && !dynamicsLoading.value) {
+    loadDynamics()
+  }
   if (name === 'liked' && liked.value.length === 0 && !likedLoading.value) {
     loadLiked()
   }
@@ -315,12 +415,14 @@ const handleTabChange = (name) => {
 }
 
 const loadAll = async () => {
-  activeTab.value = 'works'
+  activeTab.value = 'dynamics'
   followed.value = false
   liked.value = []
   favorited.value = []
+  dynamics.value = []
   await loadProfile()
   if (!profile.value) return
+  loadDynamics()
   loadWorks()
   loadFollowStatus()
   if (isSelf.value) {
@@ -354,6 +456,13 @@ onMounted(loadAll)
   padding: 32px;
 }
 
+.dyn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 80px;
+}
+
 .profile-card {
   display: flex;
   align-items: flex-start;
@@ -370,7 +479,7 @@ onMounted(loadAll)
   flex-shrink: 0;
   padding: 4px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #fb7299, #00aeec);
+  background: linear-gradient(135deg, #2563EB, #60A5FA);
 }
 
 .avatar-wrap :deep(.el-avatar) {
@@ -476,11 +585,11 @@ onMounted(loadAll)
 }
 
 .space-tabs :deep(.el-tabs__item.is-active) {
-  color: var(--brand, #fb7299);
+  color: var(--brand, #2563EB);
 }
 
 .space-tabs :deep(.el-tabs__active-bar) {
-  background-color: var(--brand, #fb7299);
+  background-color: var(--brand, #2563EB);
 }
 
 @media (max-width: 768px) {

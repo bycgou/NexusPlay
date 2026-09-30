@@ -33,7 +33,25 @@ class ReportServiceImplTest {
     private CommentMapper commentMapper;
 
     @Mock
+    private com.biliplus.mapper.DanmakuMapper danmakuMapper;
+
+    @Mock
+    private LiveRoomService liveRoomService;
+
+    @Mock
+    private UserPenaltyService userPenaltyService;
+
+    @Mock
     private NotificationService notificationService;
+
+    @Mock
+    private UserCreditService userCreditService;
+
+    @Mock
+    private EventLogService eventLogService;
+
+    @Mock
+    private AdminOperationLogService adminOperationLogService;
 
     @InjectMocks
     private ReportServiceImpl reportService;
@@ -135,6 +153,48 @@ class ReportServiceImplTest {
 
         // 复用评论软删：以评论作者身份触发 where 条件
         verify(commentMapper).softDelete(8L, 42L);
+    }
+
+    @Test
+    void handle_whenDanmakuReportUpheld_shouldSoftDeleteAndCredit() {
+        when(reportMapper.selectById(5L)).thenReturn(pendingReport(ReportTarget.TYPE_DANMAKU, 66L));
+        when(reportMapper.handle(any(), any(), any(), any(), any())).thenReturn(1);
+        com.biliplus.pojo.entity.Danmaku danmaku = new com.biliplus.pojo.entity.Danmaku();
+        danmaku.setId(66L);
+        danmaku.setUserId(42L);
+        danmaku.setVideoId(3L);
+        when(danmakuMapper.selectById(66L)).thenReturn(danmaku);
+
+        reportService.handle(1L, 5L, ReportTarget.STATUS_HANDLED, null);
+
+        verify(danmakuMapper).softDelete(66L);
+        verify(userCreditService).applyViolation(eq(42L), anyInt(), anyString());
+    }
+
+    @Test
+    void handle_whenUserReportUpheld_shouldMuteTarget() {
+        when(reportMapper.selectById(5L)).thenReturn(pendingReport(ReportTarget.TYPE_USER, 42L));
+        when(reportMapper.handle(any(), any(), any(), any(), any())).thenReturn(1);
+
+        reportService.handle(1L, 5L, ReportTarget.STATUS_HANDLED, "辱骂他人");
+
+        verify(userCreditService).applyViolation(eq(42L), anyInt(), anyString());
+        verify(userPenaltyService).penalize(eq(42L), eq("mute"), anyString(), eq(3), isNull());
+    }
+
+    @Test
+    void handle_whenLiveReportUpheld_shouldForceStop() {
+        when(reportMapper.selectById(5L)).thenReturn(pendingReport(ReportTarget.TYPE_LIVE_ROOM, 9L));
+        when(reportMapper.handle(any(), any(), any(), any(), any())).thenReturn(1);
+        com.biliplus.pojo.entity.LiveRoom room = new com.biliplus.pojo.entity.LiveRoom();
+        room.setId(9L);
+        room.setUserId(77L);
+        when(liveRoomService.getLiveRoom(9L)).thenReturn(room);
+
+        reportService.handle(1L, 5L, ReportTarget.STATUS_HANDLED, null);
+
+        verify(liveRoomService).forceStop(9L);
+        verify(userCreditService).applyViolation(eq(77L), anyInt(), anyString());
     }
 
     @Test

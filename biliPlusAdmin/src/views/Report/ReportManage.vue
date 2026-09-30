@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getReports, handleReport, type Report } from '@/api/report'
@@ -193,7 +193,7 @@ onMounted(loadList)
       />
     </div>
 
-    <el-dialog v-model="dialogVisible" title="处理举报" width="520px" :close-on-click-modal="false">
+    <el-dialog v-model="dialogVisible" title="处理举报" width="520px" :close-on-click-modal="false" append-to-body>
       <div v-if="current" class="detail-box">
         <div class="detail-line">
           举报 #{{ current?.id }} · {{ targetTypeText(current?.targetType) }} #{{ current?.targetId }} ·

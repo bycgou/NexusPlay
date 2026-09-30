@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
@@ -46,9 +47,11 @@ public class VideoController {
 
     // 3.加载推荐视频
     @GetMapping("/recommend")
-    public Result<PageResult> recommend(){
+    public Result<PageResult> recommend(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size){
         log.info("加载推荐视频");
-        PageResult pageResult = videoService.recommend();
+        PageResult pageResult = videoService.recommend(page, size);
         log.info("查询结果：{}", pageResult);
         return Result.success(pageResult);
     }

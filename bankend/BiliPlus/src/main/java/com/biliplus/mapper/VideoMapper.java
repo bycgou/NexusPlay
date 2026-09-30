@@ -16,8 +16,8 @@ public interface VideoMapper {
     @Select("select * from video where id = #{videoId} and status = 1")
     Video getVideo(Long videoId);
 
-    /** 带作者昵称/头像的推荐列表（见 VideoMapper.xml） */
-    Page<GetListVideoVO> recommend();
+    /** 带作者昵称/头像的推荐列表（见 VideoMapper.xml），显式分页 */
+    Page<GetListVideoVO> recommend(@Param("offset") int offset, @Param("size") int size);
 
     @Update("update video set like_count = like_count + #{delta} where id = #{videoId}")
     int changeLikeCount(@Param("videoId") Long videoId, @Param("delta") int delta);

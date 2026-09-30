@@ -37,7 +37,7 @@ public class EmailCodeServiceImpl implements EmailCodeService {
 
             // 3.1 生成5位随机验证码
             String code = StringTools.getRandomNumber(AllConstant.LENGTH_5);
-            log.debug("生成邮箱验证码：{}，发送至：{}", code, email); // 生产环境可去掉code日志
+            log.debug("生成邮箱验证码并发送"); // 不打印验证码明文
 
             // 3.2 构建邮件消息
             SimpleMailMessage message = new SimpleMailMessage();

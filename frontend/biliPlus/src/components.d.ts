@@ -11,6 +11,9 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AuthDialog: typeof import('./components/AuthDialog.vue')['default']
+    DanmakuReportDialog: typeof import('./components/DanmakuReportDialog.vue')['default']
+    DynamicCard: typeof import('./components/DynamicCard.vue')['default']
     ElAlert: typeof import('element-plus/es')['ElAlert']
     ElAside: typeof import('element-plus/es')['ElAside']
     ElAvatar: typeof import('element-plus/es')['ElAvatar']
@@ -33,6 +36,7 @@ declare module 'vue' {
     ElImage: typeof import('element-plus/es')['ElImage']
     ElInput: typeof import('element-plus/es')['ElInput']
     ElInputNumber: typeof import('element-plus/es')['ElInputNumber']
+    ElLink: typeof import('element-plus/es')['ElLink']
     ElMain: typeof import('element-plus/es')['ElMain']
     ElMenu: typeof import('element-plus/es')['ElMenu']
     ElMenuItem: typeof import('element-plus/es')['ElMenuItem']
@@ -60,6 +64,7 @@ declare module 'vue' {
     GiftEffectLayer: typeof import('./components/GiftEffectLayer.vue')['default']
     ImageUploader: typeof import('./components/ImageUploader.vue')['default']
     MobileTabBar: typeof import('./components/MobileTabBar.vue')['default']
+    ReportDialog: typeof import('./components/ReportDialog.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     VideoSkeleton: typeof import('./components/VideoSkeleton.vue')['default']

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import flvjs from 'flv.js'
@@ -228,7 +228,7 @@ onUnmounted(destroyPlayer)
         width="920px"
         destroy-on-close
         @close="closePreview"
-    >
+     append-to-body>
       <div v-if="previewRoom" class="preview-body">
         <div class="preview-meta">
           <div>

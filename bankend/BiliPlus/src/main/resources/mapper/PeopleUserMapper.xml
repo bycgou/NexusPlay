@@ -8,8 +8,8 @@
         VALUES (#{username}, #{password}, #{email}, #{phone}, #{avatar}, #{nickname}, #{signature}, #{role}, #{status}, #{createTime}, #{updateTime})
     </insert>
     <insert id="insertVideo">
-        INSERT INTO Video (category_id,title, description, cover_url, video_url,duration,user_id,create_time, update_time)
-        VALUES (#{categoryId},#{title}, #{description}, #{coverUrl},#{videoUrl},#{duration},#{userId},#{createTime}, #{updateTime})
+        INSERT INTO Video (category_id,title, description, cover_url, video_url,duration,duration_sec,user_id,is_original,create_time, update_time)
+        VALUES (#{categoryId},#{title}, #{description}, #{coverUrl},#{videoUrl},#{duration},#{durationSec},#{userId},#{isOriginal},#{createTime}, #{updateTime})
     </insert>
 
     <update id="update">

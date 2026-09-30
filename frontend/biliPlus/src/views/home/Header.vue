@@ -2,33 +2,34 @@
   <!-- 顶部导航栏 -->
   <el-header height="60px" class="header-container">
     <div class="header-content">
-      <!-- Logo区域 -->
-      <div class="logo" @click="openShouYe">
-        <img src="/favicon.ico" alt="logo" class="logo-img" />
-        <span class="logo-text">NexusPlay</span>
+      <!-- 左侧：Logo + 导航 -->
+      <div class="left-section">
+        <div class="logo" @click="openShouYe">
+          <img src="/favicon.ico" alt="logo" class="logo-img" />
+          <span class="logo-text">NexusPlay</span>
+        </div>
+
+        <el-menu
+            mode="horizontal"
+            :ellipsis="false"
+            :default-active="activeNav"
+            background-color="transparent"
+            text-color="var(--ink-secondary)"
+            active-text-color="var(--brand)"
+            class="nav-menu"
+            router
+        >
+          <el-menu-item index="/" class="nav-item">首页</el-menu-item>
+          <el-menu-item index="/dynamic" class="nav-item">动态</el-menu-item>
+          <el-menu-item index="/channel/animation" class="nav-item">动画</el-menu-item>
+          <el-menu-item index="/anime" class="nav-item">番剧</el-menu-item>
+          <el-menu-item index="/channel/movie" class="nav-item">影视</el-menu-item>
+          <el-menu-item index="/live" class="nav-item">直播</el-menu-item>
+        </el-menu>
       </div>
 
-      <!-- 导航菜单 -->
-      <el-menu
-          mode="horizontal"
-          :ellipsis="false"
-          :default-active="activeNav"
-          background-color="transparent"
-          text-color="var(--ink-secondary)"
-          active-text-color="var(--brand)"
-          class="nav-menu"
-          router
-      >
-        <el-menu-item index="/" class="nav-item">首页</el-menu-item>
-        <el-menu-item index="/channel/animation" class="nav-item">动画</el-menu-item>
-        <el-menu-item index="/anime" class="nav-item">番剧</el-menu-item>
-        <el-menu-item index="/channel/movie" class="nav-item">影视</el-menu-item>
-        <el-menu-item index="/live" class="nav-item">直播</el-menu-item>
-      </el-menu>
-
-      <!-- 右侧功能区 -->
-      <div class="right-actions">
-        <!-- 搜索框 -->
+      <!-- 中间：搜索框（绝对居中） -->
+      <div class="search-section">
         <el-input
             v-model="searchText"
             placeholder="搜索视频、用户..."
@@ -40,7 +41,10 @@
             <el-icon><Search /></el-icon>
           </template>
         </el-input>
+      </div>
 
+      <!-- 右侧：通知 / 消息 / 投稿 / 头像 -->
+      <div class="right-actions">
         <!-- 主题切换 -->
         <el-tooltip :content="theme === 'dark' ? '切换到亮色模式' : '切换到暗色模式'" placement="bottom">
           <div class="theme-toggle notification-badge" @click="toggleTheme">
@@ -265,12 +269,14 @@ import router from "@/router/index.js";
 import { ElMessage } from 'element-plus';
 import axios from 'axios';
 import {useUserStore} from "@/store/user.js";
+import {useAuthPrompt} from "@/composables/useAuthPrompt";
 import {useRouter, useRoute} from "vue-router";
 import { useTheme } from '@/composables/useTheme';
 import { getUnreadTotal } from '@/api/chat'
 import { getNotificationUnreadCount } from '@/api/notify'
 
 const userStore = useUserStore();
+const authPrompt = useAuthPrompt();
 const route = useRoute();
 const { theme, toggleTheme } = useTheme();
 
@@ -278,6 +284,7 @@ const { theme, toggleTheme } = useTheme();
 const activeNav = computed(() => {
   const path = route.path
   if (path === '/' || path.startsWith('/video')) return '/'
+  if (path.startsWith('/dynamic')) return '/dynamic'
   if (path.startsWith('/channel/animation')) return '/channel/animation'
   if (path.startsWith('/anime')) return '/anime'
   if (path.startsWith('/channel/movie')) return '/channel/movie'
@@ -385,10 +392,9 @@ const loginForm = reactive({
   password: ''
 });
 
-// 打开登录弹窗（保留原有逻辑，补充日志便于排查）
+// 打开登录弹窗（全局 AuthDialog）
 function openLoginDialog() {
-  console.log('打开登录弹窗');
-  dialogVisible.value = true;
+  authPrompt.openLogin();
 }
 
 // 表单验证规则
@@ -473,9 +479,7 @@ const registerFormRef = ref(null);
 
 // 打开注册对话框的方法
 const openRegisterDialog = () => {
-  registerDialogVisible.value = true;
-  // 打开时刷新验证码
-  refreshCaptcha();
+  authPrompt.openRegister();
 };
 
 // 验证码图片
@@ -699,12 +703,28 @@ function openProfile(){
 }
 
 .header-content {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   display: flex;
   align-items: center;
   height: 100%;
-  padding: 0 var(--space-md);
+  padding: 0 24px;
+  position: relative;
+}
+
+.left-section {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.search-section {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(420px, 36vw);
+  z-index: 1;
 }
 
 /* Logo样式 */
@@ -736,7 +756,7 @@ function openProfile(){
 
 .logo:hover .logo-img {
   transform: rotate(-8deg) scale(1.08);
-  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.35);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
 }
 
 .logo-text {
@@ -752,7 +772,6 @@ function openProfile(){
 
 /* 导航菜单 */
 .nav-menu {
-  flex: 1;
   border-bottom: none;
   background: transparent !important;
 }
@@ -801,7 +820,7 @@ function openProfile(){
 .nav-menu .el-menu-item.is-active::after {
   width: 70%;
   left: 15%;
-  box-shadow: 0 0 8px rgba(108, 92, 231, 0.55);
+  box-shadow: 0 0 8px rgba(37, 99, 235, 0.55);
 }
 
 /* 右侧功能区 */
@@ -810,10 +829,11 @@ function openProfile(){
   align-items: center;
   gap: var(--space-md);
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .search-input {
-  width: 260px;
+  width: 100%;
   transition: width var(--transition-base);
 }
 
@@ -919,7 +939,7 @@ function openProfile(){
 
 .submit-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(108, 92, 231, 0.35);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
 }
 
 .submit-btn:hover::before {
@@ -957,7 +977,7 @@ function openProfile(){
 .user-menu:hover .user-avatar {
   border-color: var(--brand);
   transform: scale(1.06) rotate(3deg);
-  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.25);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
 
 .user-name {
@@ -1009,8 +1029,15 @@ function openProfile(){
     display: none;
   }
 
+  .search-section {
+    width: min(180px, 32vw);
+    left: auto;
+    right: 160px;
+    transform: none;
+  }
+
   .search-input {
-    width: 180px;
+    width: 100%;
   }
 
   .search-input:focus-within {

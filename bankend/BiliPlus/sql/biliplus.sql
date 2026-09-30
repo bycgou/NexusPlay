@@ -684,4 +684,122 @@ CREATE TABLE `wallet_transaction`  (
   INDEX `idx_biz`(`biz_type` ASC, `biz_id` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '钱包账变流水' ROW_FORMAT = DYNAMIC;
 
+-- ----------------------------
+-- Table structure for sensitive_word （阶段1 内容治理：敏感词库）
+-- level: 1拦截 2转人工(标记后放行) 3仅标记
+-- ----------------------------
+DROP TABLE IF EXISTS `sensitive_word`;
+CREATE TABLE `sensitive_word`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `word` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '敏感词',
+  `level` tinyint NOT NULL DEFAULT 1 COMMENT '1拦截 2转人工 3仅标记',
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT '1启用 0停用',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_word`(`word` ASC) USING BTREE,
+  INDEX `idx_status_level`(`status` ASC, `level` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '敏感词库' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for sensitive_hit_log （敏感词命中记录，用于误伤率复核）
+-- review_status: 0待复核 1确认违规 2误伤
+-- ----------------------------
+DROP TABLE IF EXISTS `sensitive_hit_log`;
+CREATE TABLE `sensitive_hit_log`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `word_id` bigint NULL DEFAULT NULL COMMENT '敏感词ID',
+  `word` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '命中词',
+  `level` tinyint NOT NULL DEFAULT 1 COMMENT '命中时的级别',
+  `user_id` bigint NULL DEFAULT NULL COMMENT '发布者',
+  `target_type` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT 'video|comment|danmaku|dynamic',
+  `target_id` bigint NULL DEFAULT NULL COMMENT '目标ID',
+  `content` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '命中片段',
+  `action` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT 'block|mark',
+  `review_status` tinyint NOT NULL DEFAULT 0 COMMENT '0待复核 1确认违规 2误伤',
+  `review_admin_id` bigint NULL DEFAULT NULL COMMENT '复核管理员',
+  `review_time` datetime NULL DEFAULT NULL COMMENT '复核时间',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_user_time`(`user_id` ASC, `create_time` ASC) USING BTREE,
+  INDEX `idx_target`(`target_type` ASC, `target_id` ASC) USING BTREE,
+  INDEX `idx_review`(`review_status` ASC, `create_time` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '敏感词命中记录' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for user_credit （用户信用分）
+-- 初始 100 分；举报成立 -10，敏感词拦截 -5，审核驳回 -3，投稿通过 +2
+-- ----------------------------
+DROP TABLE IF EXISTS `user_credit`;
+CREATE TABLE `user_credit`  (
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `score` int NOT NULL DEFAULT 100 COMMENT '信用分',
+  `violation_count` int NOT NULL DEFAULT 0 COMMENT '违规次数',
+  `last_violation_time` datetime NULL DEFAULT NULL COMMENT '最近违规时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`user_id`) USING BTREE,
+  INDEX `idx_score`(`score` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户信用分' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for user_penalty （处置记录，支持时限）
+-- action: mute 禁言 / ban 封禁；end_time NULL 表示永久
+-- ----------------------------
+DROP TABLE IF EXISTS `user_penalty`;
+CREATE TABLE `user_penalty`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `user_id` bigint NOT NULL COMMENT '被处置用户',
+  `action` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT 'mute|ban',
+  `reason` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '原因',
+  `start_time` datetime NOT NULL COMMENT '开始时间',
+  `end_time` datetime NULL DEFAULT NULL COMMENT '到期时间，NULL=永久',
+  `admin_id` bigint NULL DEFAULT NULL COMMENT '操作管理员',
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT '1生效中 2已到期 3已提前解除',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_user_status`(`user_id` ASC, `status` ASC) USING BTREE,
+  INDEX `idx_expiry`(`status` ASC, `end_time` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户处置记录' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for event_log （阶段0 统一行为流水：推荐特征/治理报表/协同实验的共同原料）
+-- 违规曝光率 = 窗口内 video_view 中 target 命中违规视频集合的占比
+-- extra 存 JSON 文本（分类ID、礼物金额、举报原因等扩展），用 VARCHAR 避免类型处理器开销
+-- ----------------------------
+DROP TABLE IF EXISTS `event_log`;
+CREATE TABLE `event_log`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `user_id` bigint NULL DEFAULT NULL COMMENT '用户ID，未登录为 NULL',
+  `event_type` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT 'video_view|video_like|video_favorite|comment|danmaku|follow|gift_send|live_enter|live_watch|report|audit_pass|...',
+  `target_type` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT 'video|user|comment|live_room|gift|dynamic',
+  `target_id` bigint NULL DEFAULT NULL COMMENT '目标ID',
+  `duration_sec` int NULL DEFAULT NULL COMMENT '观看/直播时长(秒)',
+  `extra` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT 'JSON 文本扩展',
+  `source` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT 'web|admin|system',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_user_time`(`user_id` ASC, `create_time` ASC) USING BTREE,
+  INDEX `idx_type_target`(`event_type` ASC, `target_type` ASC, `target_id` ASC) USING BTREE,
+  INDEX `idx_time`(`create_time` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '统一行为流水' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for admin_operation_log （阶段0 操作日志：管理端可追溯）
+-- action 形如 video.approve|user.ban|report.handle|sensitive.create
+-- ----------------------------
+DROP TABLE IF EXISTS `admin_operation_log`;
+CREATE TABLE `admin_operation_log`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `admin_id` bigint NULL DEFAULT NULL COMMENT '操作管理员，系统自动动作为 NULL',
+  `action` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT 'video.approve|user.ban|report.handle|...',
+  `target_type` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT 'video|user|report|gift|live_room|sensitive_word',
+  `target_id` bigint NULL DEFAULT NULL COMMENT '目标ID',
+  `detail` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '补充说明',
+  `ip` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '操作来源 IP',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_admin_time`(`admin_id` ASC, `create_time` ASC) USING BTREE,
+  INDEX `idx_action`(`action` ASC) USING BTREE,
+  INDEX `idx_target`(`target_type` ASC, `target_id` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '管理端操作日志' ROW_FORMAT = Dynamic;
+
 SET FOREIGN_KEY_CHECKS = 1;

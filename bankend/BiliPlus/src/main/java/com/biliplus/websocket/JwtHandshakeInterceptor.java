@@ -34,6 +34,7 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
 
         if (token == null || token.isEmpty()) {
             log.warn("WebSocket 握手失败：缺少 token");
+            response.setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
             return false;
         }
 
@@ -42,6 +43,7 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
             Long userId = JwtUtil.extractUserId(claims);
             if (userId == null) {
                 log.warn("JWT 中未包含 userId");
+                response.setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
                 return false;
             }
             attributes.put("userId", userId);
@@ -49,6 +51,7 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
             return true;
         } catch (Exception e) {
             log.warn("JWT 验证失败: {}", e.getMessage());
+            response.setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
             return false;
         }
     }

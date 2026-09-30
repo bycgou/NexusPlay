@@ -20,6 +20,15 @@ public class DanmakuServiceImpl implements DanmakuService {
     @Autowired
     private DanmakuMapper danmakuMapper;
 
+    @Autowired
+    private com.biliplus.service.SensitiveWordService sensitiveWordService;
+
+    @Autowired
+    private com.biliplus.service.UserPenaltyService userPenaltyService;
+
+    @Autowired
+    private com.biliplus.service.EventLogService eventLogService;
+
     @Override
     public void saveDanmaku(DanmakuSendDTO danmakuSendDTO) {
         log.info("Service层保存弹幕：{}", danmakuSendDTO);
@@ -41,8 +50,16 @@ public class DanmakuServiceImpl implements DanmakuService {
         if (userId == null) {
             throw new BusinessException("请先登录再发送弹幕");
         }
+        // 禁言中的用户不能发弹幕
+        if (userPenaltyService.isMuted(userId)) {
+            throw new BusinessException("你已被禁言，暂时无法发送弹幕");
+        }
+        sensitiveWordService.enforce(danmakuSendDTO.getText(), userId, "danmaku", danmakuSendDTO.getVideoId());
 
         String color = normalizeColor(danmakuSendDTO.getColor());
+        eventLogService.record(com.biliplus.constant.EventType.DANMAKU, userId,
+                com.biliplus.constant.EventType.TARGET_VIDEO, danmakuSendDTO.getVideoId(),
+                null, danmakuSendDTO.getText(), com.biliplus.constant.EventType.SOURCE_WEB);
 
         // 后端约定：1-滚动 2-顶部 3-底部
         String rawType = danmakuSendDTO.getType();

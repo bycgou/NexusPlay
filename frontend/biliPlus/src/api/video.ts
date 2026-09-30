@@ -48,4 +48,13 @@ export const shareVideo = (videoId) => {
     });
 }
 
+// 6. 视频弹幕列表（含 id/userId，供举报点选）
+export const getVideoDanmakus = (videoId, maxCount = 500) => {
+    return request({
+        url: '/pp/user/danmakuv3',
+        method: 'get',
+        params: { videoId, maxCount }
+    });
+}
+
 export {request}

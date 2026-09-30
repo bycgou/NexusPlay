@@ -1,4 +1,4 @@
-<!-- src/views/chat/components/ChatSidebar.vue -->
+﻿<!-- src/views/chat/components/ChatSidebar.vue -->
 <template>
   <div class="chat-sidebar">
     <div class="sidebar-header">
@@ -158,7 +158,7 @@ const selectConversation = (conv) => emit('select-conversation', conv)
 
 .conversation-item.active {
   background: #ece9fe;
-  border-left-color: #6c5ce7;
+  border-left-color: #2563EB;
 }
 
 .avatar {

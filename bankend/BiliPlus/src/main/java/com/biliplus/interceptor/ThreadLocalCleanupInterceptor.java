@@ -16,7 +16,7 @@ public class ThreadLocalCleanupInterceptor implements HandlerInterceptor {
                                 Object handler, Exception ex) throws Exception {
         // 清理 ThreadLocal，避免线程池复用导致内存泄漏或数据污染
         UserContext.clear();
-        // 如果还有其他 ThreadLocal，也在这里清理
+        com.biliplus.utils.AdminContext.clear();
         log.debug("ThreadLocal 已清理");
     }
 }

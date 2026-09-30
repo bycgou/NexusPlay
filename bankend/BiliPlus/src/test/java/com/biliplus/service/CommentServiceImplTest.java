@@ -41,6 +41,15 @@ class CommentServiceImplTest {
     @Mock
     private NotificationService notificationService;
 
+    @Mock
+    private SensitiveWordService sensitiveWordService;
+
+    @Mock
+    private UserPenaltyService userPenaltyService;
+
+    @Mock
+    private EventLogService eventLogService;
+
     @InjectMocks
     private CommentServiceImpl commentService;
 

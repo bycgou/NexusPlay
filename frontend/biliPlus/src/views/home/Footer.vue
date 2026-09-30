@@ -102,7 +102,7 @@ const socialLinks = [
 }
 
 .footer-content {
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: var(--space-2xl) var(--space-md) var(--space-lg);
 }

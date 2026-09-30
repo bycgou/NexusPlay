@@ -58,6 +58,9 @@ public class InteractionServiceImpl implements InteractionService {
     @Autowired
     private FavoriteFolderService favoriteFolderService;
 
+    @Autowired
+    private com.biliplus.service.EventLogService eventLogService;
+
     private String resolveNickname(Long userId) {
         User user = peopleUserMapper.getUserById(userId);
         if (user == null) {
@@ -81,6 +84,8 @@ public class InteractionServiceImpl implements InteractionService {
             videoMapper.changeLikeCount(videoId, -1);
             result.put("liked", false);
             log.info("取消点赞: videoId={}, userId={}", videoId, userId);
+            eventLogService.record(com.biliplus.constant.EventType.VIDEO_UNLIKE, userId,
+                    com.biliplus.constant.EventType.TARGET_VIDEO, videoId);
         } else {
             VideoLike videoLike = new VideoLike();
             videoLike.setVideoId(videoId);
@@ -90,6 +95,8 @@ public class InteractionServiceImpl implements InteractionService {
             videoMapper.changeLikeCount(videoId, 1);
             result.put("liked", true);
             log.info("添加点赞: videoId={}, userId={}", videoId, userId);
+            eventLogService.record(com.biliplus.constant.EventType.VIDEO_LIKE, userId,
+                    com.biliplus.constant.EventType.TARGET_VIDEO, videoId);
         }
 
         result.put("likeCount", videoLikeMapper.countByVideoId(videoId));
@@ -109,6 +116,8 @@ public class InteractionServiceImpl implements InteractionService {
             videoFavoriteMapper.delete(videoId, userId);
             result.put("collected", false);
             log.info("取消收藏: videoId={}, userId={}", videoId, userId);
+            eventLogService.record(com.biliplus.constant.EventType.VIDEO_UNFAVORITE, userId,
+                    com.biliplus.constant.EventType.TARGET_VIDEO, videoId);
         } else {
             // 缺省进默认收藏夹；显式指定时校验归属
             Long resolvedFolderId = favoriteFolderService.resolveFolderId(userId, folderId);
@@ -121,6 +130,8 @@ public class InteractionServiceImpl implements InteractionService {
             result.put("collected", true);
             result.put("folderId", resolvedFolderId);
             log.info("添加收藏: videoId={}, userId={}, folderId={}", videoId, userId, resolvedFolderId);
+            eventLogService.record(com.biliplus.constant.EventType.VIDEO_FAVORITE, userId,
+                    com.biliplus.constant.EventType.TARGET_VIDEO, videoId);
         }
 
         result.put("favoriteCount", videoFavoriteMapper.countByVideoId(videoId));
@@ -145,6 +156,8 @@ public class InteractionServiceImpl implements InteractionService {
             userFollowMapper.delete(followerId, followingId);
             result.put("followed", false);
             log.info("取消关注: userId={}, followUserId={}", followerId, followingId);
+            eventLogService.record(com.biliplus.constant.EventType.UNFOLLOW, followerId,
+                    com.biliplus.constant.EventType.TARGET_USER, followingId);
         } else {
             UserFollow userFollow = new UserFollow();
             userFollow.setUserId(followerId);
@@ -153,6 +166,8 @@ public class InteractionServiceImpl implements InteractionService {
             userFollowMapper.insert(userFollow);
             result.put("followed", true);
             log.info("添加关注: userId={}, followUserId={}", followerId, followingId);
+            eventLogService.record(com.biliplus.constant.EventType.FOLLOW, followerId,
+                    com.biliplus.constant.EventType.TARGET_USER, followingId);
             // 仅在关注时通知，取关不打扰
             notificationService.notify(followingId, followerId, Notify.TYPE_FOLLOW,
                     resolveNickname(followerId) + " 关注了你", null, null, null);

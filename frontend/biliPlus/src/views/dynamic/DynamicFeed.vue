@@ -1,8 +1,11 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/store/user'
+import { useAuthPrompt } from '@/composables/useAuthPrompt'
+import DynamicCard from '@/components/DynamicCard.vue'
+import EmojiPicker from '@/views/components/EmojiPicker.vue'
 import {
     deleteDynamic,
     getDynamicFeed,
@@ -13,12 +16,12 @@ import {
 } from '@/api/dynamic'
 
 const router = useRouter()
+const authPrompt = useAuthPrompt()
 const userStore = useUserStore()
 
 const isLogin = computed(() => !!userStore.isLogin)
 const myId = computed(() => Number(userStore.userInfo?.id) || 0)
 
-// 已登录默认看关注流，未登录只能看广场
 const activeTab = ref<'feed' | 'hot'>(isLogin.value ? 'feed' : 'hot')
 
 const list = ref<DynamicItem[]>([])
@@ -29,27 +32,21 @@ const loading = ref(false)
 
 const composeText = ref('')
 const publishing = ref(false)
-
-const formatTime = (value?: string) => (value ? String(value).replace('T', ' ').slice(0, 16) : '')
-
-const typeLabel = (type: number) => {
-    if (type === 2) return '投稿视频'
-    if (type === 3) return '转发'
-    if (type === 4) return '开播'
-    return '文字'
-}
-
-const isSelf = (item: DynamicItem) => myId.value > 0 && Number(item.userId) === myId.value
+const showEmoji = ref(false)
+const textareaRef = ref()
 
 const emptyText = computed(() => {
     if (activeTab.value === 'feed') {
         return isLogin.value ? '关注的人还没有发布动态' : '登录后查看关注动态'
     }
-    return '暂无动态'
+    return '广场上还没有动态'
 })
 
-const load = async () => {
-    // 关注流需登录，未登录不请求
+const tabLabel = computed(() => (activeTab.value === 'feed' ? '关注' : '广场'))
+
+const isSelf = (item: DynamicItem) => myId.value > 0 && Number(item.userId) === myId.value
+
+const load = async (append = false) => {
     if (activeTab.value === 'feed' && !isLogin.value) {
         list.value = []
         total.value = 0
@@ -61,17 +58,21 @@ const load = async () => {
         const req = activeTab.value === 'feed' ? getDynamicFeed : getHotDynamics
         const res: any = await req({ page: page.value, size })
         if (res?.code === 1) {
-            list.value = res.data?.records || []
+            const records: DynamicItem[] = res.data?.records || []
+            list.value = append ? [...list.value, ...records] : records
             total.value = Number(res.data?.total) || 0
         } else {
-            list.value = []
-            total.value = 0
+            if (!append) {
+                list.value = []
+                total.value = 0
+            }
             ElMessage.error(res?.msg || '加载动态失败')
         }
-    } catch (e) {
-        // 拦截器已统一提示，这里只重置列表
-        list.value = []
-        total.value = 0
+    } catch {
+        if (!append) {
+            list.value = []
+            total.value = 0
+        }
     } finally {
         loading.value = false
     }
@@ -82,7 +83,21 @@ const handleTabChange = () => {
     load()
 }
 
+const canLoadMore = computed(() => list.value.length < total.value && !loading.value)
+
+const loadMore = () => {
+    if (!canLoadMore.value) return
+    page.value += 1
+    load(true)
+}
+
 // ===== 发布 =====
+
+const pickEmoji = (emoji: string) => {
+    composeText.value = (composeText.value || '') + emoji
+    showEmoji.value = false
+    textareaRef.value?.focus?.()
+}
 
 const handlePublish = async () => {
     const content = composeText.value.trim()
@@ -94,6 +109,11 @@ const handlePublish = async () => {
         ElMessage.warning('动态内容不能超过1000字')
         return
     }
+    if (!isLogin.value) {
+        ElMessage.warning('请先登录后再发布')
+        authPrompt.openLogin()
+        return
+    }
 
     publishing.value = true
     try {
@@ -101,14 +121,14 @@ const handlePublish = async () => {
         if (res?.code === 1) {
             ElMessage.success('发布成功')
             composeText.value = ''
-            // 发布后回到关注流首屏（自己发布的动态也在关注流里）
+            showEmoji.value = false
             activeTab.value = 'feed'
             page.value = 1
             await load()
         } else {
             ElMessage.error(res?.msg || '发布失败')
         }
-    } catch (e) {
+    } catch {
         // 拦截器已提示
     } finally {
         publishing.value = false
@@ -130,7 +150,7 @@ const handleLike = async (item: DynamicItem) => {
         } else {
             ElMessage.error(res?.msg || '点赞失败')
         }
-    } catch (e) {
+    } catch {
         // 拦截器已提示
     }
 }
@@ -143,7 +163,6 @@ const handleDelete = async (item: DynamicItem) => {
             cancelButtonText: '取消'
         })
     } catch {
-        // 用户取消
         return
     }
 
@@ -151,39 +170,37 @@ const handleDelete = async (item: DynamicItem) => {
         const res: any = await deleteDynamic(item.id)
         if (res?.code === 1) {
             ElMessage.success('动态已删除')
-            // 当前页删空后回退上一页
             if (list.value.length === 1 && page.value > 1) page.value -= 1
             await load()
         } else {
             ElMessage.error(res?.msg || '删除失败')
         }
-    } catch (e) {
+    } catch {
         // 拦截器已提示
     }
 }
 
-// ===== 跳转 =====
-
-const goUser = (userId?: number) => {
-    if (userId) router.push(`/user/${userId}`)
-}
-
-// type=2 的投稿动态点卡片进视频页
-const goVideo = (item: DynamicItem) => {
-    if (item.type === 2 && item.videoId) {
-        router.push(`/video/${item.videoId}`)
+const handleShare = async () => {
+    const url = `${window.location.origin}/dynamic`
+    try {
+        if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(url)
+            ElMessage.success('动态页链接已复制')
+            return
+        }
+    } catch {
+        // fall through
     }
+    ElMessage.info(url)
 }
 
-const goLogin = () => {
-    router.push('/login')
-}
+const goLogin = () => authPrompt.openLogin()
+const goMe = () => router.push('/me')
 
 onMounted(() => {
     load()
 })
 
-// 登录态变化时刷新关注流可用性
 watch(
     () => isLogin.value,
     (login) => {
@@ -193,125 +210,160 @@ watch(
         } else if (!login && activeTab.value === 'feed') {
             list.value = []
             total.value = 0
+            activeTab.value = 'hot'
+            page.value = 1
+            load()
         }
     }
 )
 </script>
 
 <template>
-  <div class="dynamic-feed">
-    <div class="page-header">
-      <div>
-        <h2>动态</h2>
-        <p class="sub">共 {{ total }} 条动态</p>
-      </div>
-      <el-button @click="load">刷新</el-button>
-    </div>
+  <div class="dynamic-page">
+    <div class="layout">
+      <!-- 主栏 -->
+      <main class="main-col">
+        <div class="page-header">
+          <div>
+            <h2>动态</h2>
+            <p class="sub">{{ tabLabel }} · 共 {{ total }} 条</p>
+          </div>
+          <el-button text @click="load()">刷新</el-button>
+        </div>
 
-    <el-tabs v-model="activeTab" class="tabs" @tab-change="handleTabChange">
-      <el-tab-pane label="关注" name="feed" />
-      <el-tab-pane label="广场" name="hot" />
-    </el-tabs>
+        <el-tabs v-model="activeTab" class="tabs" @tab-change="handleTabChange">
+          <el-tab-pane label="关注" name="feed" />
+          <el-tab-pane label="广场" name="hot" />
+        </el-tabs>
 
-    <!-- 发布框：仅登录可见 -->
-    <div v-if="isLogin" class="compose">
-      <el-input
-          v-model="composeText"
-          type="textarea"
-          :rows="3"
-          maxlength="1000"
-          show-word-limit
-          placeholder="分享点什么吧..."
-      />
-      <div class="compose-actions">
-        <el-button type="primary" :loading="publishing" @click="handlePublish">发布</el-button>
-      </div>
-    </div>
-    <el-alert
-        v-else
-        class="login-tip"
-        type="info"
-        :closable="false"
-        title="登录后可以发布动态、点赞并查看关注流"
-        @click="goLogin"
-    />
-
-    <el-empty v-if="!loading && list.length === 0" :description="emptyText">
-      <el-button v-if="!isLogin" type="primary" @click="goLogin">去登录</el-button>
-      <el-button v-else @click="load">刷新</el-button>
-    </el-empty>
-
-    <div v-else v-loading="loading" class="list">
-      <div
-          v-for="item in list"
-          :key="item.id"
-          class="card"
-          :class="{ clickable: item.type === 2 && !!item.videoId }"
-          @click="goVideo(item)"
-      >
-        <div class="card-head">
-          <el-avatar
-              :size="40"
-              :src="item.avatar || '/User.jpg'"
-              class="avatar"
-              @click.stop="goUser(item.userId)"
-          />
-          <div class="head-main">
-            <div class="name-row">
-              <span class="name" @click.stop="goUser(item.userId)">{{ item.nickname || '用户' }}</span>
-              <el-tag size="small" effect="light" type="info">{{ typeLabel(item.type) }}</el-tag>
+        <!-- 发布框 -->
+        <div v-if="isLogin" class="compose">
+          <div class="compose-row">
+            <el-avatar :size="40" :src="userStore.userInfo?.avatar || '/User.jpg'" class="compose-avatar" @click="goMe" />
+            <div class="compose-body">
+              <el-input
+                  ref="textareaRef"
+                  v-model="composeText"
+                  type="textarea"
+                  :rows="3"
+                  maxlength="1000"
+                  show-word-limit
+                  placeholder="分享点什么吧..."
+                  @focus="showEmoji = false"
+              />
+              <div class="compose-actions">
+                <div class="left-tools">
+                  <el-button text class="emoji-btn" @click="showEmoji = !showEmoji">
+                    <span class="emoji-glyph">😊</span>
+                    <span>表情</span>
+                  </el-button>
+                  <span class="tip">文明发言，理性互动</span>
+                </div>
+                <el-button type="primary" :loading="publishing" @click="handlePublish">发布</el-button>
+              </div>
+              <EmojiPicker :visible="showEmoji" class="emoji-panel" @pick="pickEmoji" />
             </div>
-            <span class="time">{{ formatTime(item.createTime) }}</span>
           </div>
         </div>
-
-        <p v-if="item.content" class="content">{{ item.content }}</p>
-
-        <!-- 投稿动态：展示关联视频 -->
-        <div v-if="item.type === 2 && item.videoId" class="video-card">
-          <img v-if="item.videoCoverUrl" :src="item.videoCoverUrl" class="video-cover" alt="" />
-          <div v-else class="video-cover placeholder">
-            <el-icon size="28"><VideoCameraFilled /></el-icon>
+        <div v-else class="login-card" @click="goLogin">
+          <div class="login-main">
+            <strong>登录后发布动态、点赞，并查看关注流</strong>
+            <p>和 UP 主们保持同步，第一时间看到更新</p>
           </div>
-          <div class="video-title">{{ item.videoTitle || '查看视频' }}</div>
+          <el-button type="primary" round>去登录</el-button>
         </div>
 
-        <div class="card-foot">
-          <span class="action like" :class="{ active: item.liked }" @click.stop="handleLike(item)">
-            <el-icon size="16"><component :is="item.liked ? 'StarFilled' : 'Star'" /></el-icon>
-            <span>{{ Number(item.likeCount) || 0 }}</span>
-          </span>
-          <span v-if="isSelf(item)" class="action delete" @click.stop="handleDelete(item)">
-            <el-icon size="16"><Delete /></el-icon>
-            <span>删除</span>
-          </span>
-        </div>
-      </div>
-    </div>
+        <!-- 列表 -->
+        <EmptyState
+            v-if="!loading && list.length === 0"
+            icon="Promotion"
+            title="暂无动态"
+            :description="emptyText"
+            :action-text="isLogin ? '去发布' : '去登录'"
+            @action="isLogin ? (composeText = '') : goLogin()"
+        />
 
-    <div v-if="total > size" class="pager">
-      <el-pagination
-          layout="prev, pager, next"
-          :total="total"
-          :page-size="size"
-          :current-page="page"
-          @current-change="(p: number) => { page = p; load() }"
-      />
+        <div v-else class="list" v-loading="loading">
+          <DynamicCard
+              v-for="item in list"
+              :key="item.id"
+              :item="item"
+              :show-delete="isSelf(item)"
+              @like="handleLike"
+              @delete="handleDelete"
+          />
+
+          <div v-if="list.length > 0" class="more-row">
+            <el-button v-if="canLoadMore" :loading="loading" @click="loadMore">加载更多</el-button>
+            <span v-else-if="!loading" class="end-text">已经到底啦</span>
+          </div>
+        </div>
+      </main>
+
+      <!-- 侧栏 -->
+      <aside class="side-col">
+        <section class="side-card">
+          <h3 class="side-title">{{ isLogin ? '我的动态' : '动态广场' }}</h3>
+          <template v-if="isLogin">
+            <div class="side-user">
+              <el-avatar :size="48" :src="userStore.userInfo?.avatar || '/User.jpg'" />
+              <div>
+                <div class="side-name">{{ userStore.userInfo?.nickname || userStore.userInfo?.username || '我' }}</div>
+                <div class="side-meta">UID {{ myId }}</div>
+              </div>
+            </div>
+            <div class="side-actions">
+              <el-button size="small" @click="goMe">个人主页</el-button>
+              <el-button size="small" type="primary" plain @click="handleShare">分享动态页</el-button>
+            </div>
+          </template>
+          <template v-else>
+            <p class="side-desc">浏览全站动态，登录后可以发布、点赞并关注感兴趣的人。</p>
+            <el-button type="primary" size="small" @click="goLogin">立即登录</el-button>
+          </template>
+        </section>
+
+        <section class="side-card tips">
+          <h3 class="side-title">小提示</h3>
+          <ul class="tip-list">
+            <li>关注的人发新动态会出现在「关注」里</li>
+            <li>稿件审核通过会自动同步为投稿动态</li>
+            <li>开播时也会推送开播动态</li>
+          </ul>
+        </section>
+      </aside>
     </div>
   </div>
 </template>
 
 <style scoped>
-.dynamic-feed {
-  max-width: 760px;
+.dynamic-page {
+  max-width: 1100px;
   margin: 0 auto;
   padding: 24px 16px 48px;
 }
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 20px;
+  align-items: start;
+}
+.main-col {
+  min-width: 0;
+}
+.side-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: sticky;
+  top: 84px;
+}
+
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 .page-header h2 {
   margin: 0;
@@ -326,133 +378,153 @@ watch(
 .tabs :deep(.el-tabs__header) {
   margin-bottom: 12px;
 }
+
 .compose {
-  padding: 12px;
+  padding: 14px;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--paper-white);
   margin-bottom: 16px;
 }
+.compose-row {
+  display: flex;
+  gap: 12px;
+}
+.compose-avatar {
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.compose-body {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
 .compose-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   margin-top: 10px;
 }
-.login-tip {
+.left-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.emoji-btn {
+  color: var(--mist);
+}
+.emoji-glyph {
+  font-size: 16px;
+  line-height: 1;
+}
+.tip {
+  font-size: 12px;
+  color: var(--mist-light);
+}
+.emoji-panel {
+  position: absolute;
+  left: 0;
+  bottom: 42px;
+  z-index: 20;
+  background: var(--paper-white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  max-width: 320px;
+  width: 100%;
+}
+
+.login-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--paper-white);
   margin-bottom: 16px;
   cursor: pointer;
 }
+.login-main strong {
+  display: block;
+  color: var(--ink);
+  font-size: 14px;
+}
+.login-main p {
+  margin: 6px 0 0;
+  color: var(--mist);
+  font-size: 12px;
+}
+
 .list {
   display: flex;
   flex-direction: column;
   gap: 12px;
   min-height: 120px;
 }
-.card {
-  padding: 14px;
+.more-row {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 4px;
+}
+.end-text {
+  font-size: 12px;
+  color: var(--mist-light);
+}
+
+.side-card {
+  padding: 16px;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--paper-white);
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
-.card.clickable {
-  cursor: pointer;
-}
-.card.clickable:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-.card-head {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-.avatar {
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.head-main {
-  flex: 1;
-  min-width: 0;
-}
-.name-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.name {
+.side-title {
+  margin: 0 0 12px;
   font-size: 14px;
   font-weight: 600;
   color: var(--ink);
-  cursor: pointer;
 }
-.name:hover {
-  color: var(--brand);
+.side-user {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
 }
-.time {
+.side-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.side-meta {
   font-size: 12px;
   color: var(--mist);
+  margin-top: 2px;
 }
-.content {
-  margin: 10px 0 0;
-  font-size: 14px;
+.side-actions {
+  display: flex;
+  gap: 8px;
+}
+.side-desc {
+  margin: 0 0 12px;
+  font-size: 13px;
   color: var(--ink-secondary);
-  word-break: break-word;
-  white-space: pre-wrap;
+  line-height: 1.6;
 }
-.video-card {
-  margin-top: 10px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  max-width: 320px;
+.tip-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--ink-secondary);
+  font-size: 12px;
+  line-height: 1.8;
 }
-.video-cover {
-  width: 100%;
-  aspect-ratio: 16/9;
-  object-fit: cover;
-  display: block;
-}
-.video-cover.placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--paper);
-  color: var(--mist-light);
-}
-.video-title {
-  padding: 8px 10px;
-  font-size: 13px;
-  color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.card-foot {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  margin-top: 12px;
-  font-size: 13px;
-  color: var(--mist);
-}
-.action {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  transition: color var(--transition-fast);
-}
-.action.like:hover,
-.action.like.active {
-  color: var(--like);
-}
-.action.delete:hover {
-  color: var(--danger);
-}
-.pager {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .side-col {
+    display: none;
+  }
 }
 </style>

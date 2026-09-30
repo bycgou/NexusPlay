@@ -1,4 +1,4 @@
-<!-- src/views/chat/ChatView.vue -->
+﻿<!-- src/views/chat/ChatView.vue -->
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, computed, provide } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -115,7 +115,7 @@ const scrollToBottom = () => {
 }
 
 // ====== 发送普通消息 ======
-const sendToSocket = (content, msgType = '1') => {
+const sendToSocket = (content, msgType = '1', clientMsgId) => {
   const socket = chatSocket.value
   if (!socket || socket.readyState !== WebSocket.OPEN) {
     ElMessage.warning('连接异常，请稍后再试')
@@ -125,10 +125,41 @@ const sendToSocket = (content, msgType = '1') => {
   const message = {
     conversationId: String(currentConversation.value.id),
     content: content,
-    msgType: String(msgType)
+    msgType: String(msgType),
+    clientMsgId
   }
 
   socket.send(JSON.stringify(message))
+}
+
+/** 本地消息合并：用 clientMsgId 替换乐观插入的临时消息，避免服务端回显后重复 */
+const mergeIncomingMessage = (msg) => {
+  // 1) 精确匹配 clientMsgId（发送方自己）
+  if (msg.clientMsgId) {
+    const idx = messages.value.findIndex((m) => m.clientMsgId === msg.clientMsgId)
+    if (idx >= 0) {
+      messages.value.splice(idx, 1, msg)
+      return
+    }
+  }
+
+  // 2) 自己的消息回显但无 clientMsgId：替换最近一条 pending
+  if (msg.senderId === CURRENT_USER_ID) {
+    const pendingIdx = messages.value.findIndex(
+        (m) => m.pending && m.content === msg.content && m.msgType === msg.msgType
+    )
+    if (pendingIdx >= 0) {
+      messages.value.splice(pendingIdx, 1, msg)
+      return
+    }
+  }
+
+  // 3) 已存在相同服务端 id 则忽略
+  if (msg.id != null && messages.value.some((m) => m.id === msg.id)) {
+    return
+  }
+
+  messages.value.push(msg)
 }
 
 // ====== WebSocket 消息处理（核心！）======
@@ -175,6 +206,7 @@ const handleSocketMessage = (event) => {
     if (data.conversationId != null && data.content !== undefined) {
       const msg = {
         id: data.id,
+        clientMsgId: data.clientMsgId,
         senderId: data.senderId,
         conversationId: data.conversationId,
         content: data.content,
@@ -184,7 +216,7 @@ const handleSocketMessage = (event) => {
       }
 
       if (currentConversation.value?.id == data.conversationId) {
-        messages.value.push(msg)
+        mergeIncomingMessage(msg)
         nextTick(scrollToBottom)
       }
     }
@@ -214,35 +246,41 @@ const handleSelectConversation = async (conv) => {
 const handleSendMessage = (content) => {
   if (!currentConversation.value || !content.trim()) return
 
+  const clientMsgId = `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   const tempMsg = {
-    id: Date.now(),
+    id: clientMsgId,
+    clientMsgId,
     senderId: CURRENT_USER_ID,
     conversationId: currentConversation.value.id,
     content,
     msgType: 1,
     createdAt: new Date().toISOString(),
-    isSelf: true
+    isSelf: true,
+    pending: true
   }
 
   messages.value.push(tempMsg)
   nextTick(scrollToBottom)
-  sendToSocket(content, '1')
+  sendToSocket(content, '1', clientMsgId)
 }
 
 const handleInsertImage = (url) => {
   if (!currentConversation.value || !url) return
+  const clientMsgId = `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   const tempMsg = {
-    id: Date.now(),
+    id: clientMsgId,
+    clientMsgId,
     senderId: CURRENT_USER_ID,
     conversationId: currentConversation.value.id,
     content: url,
     msgType: 2,
     createdAt: new Date().toISOString(),
-    isSelf: true
+    isSelf: true,
+    pending: true
   }
   messages.value.push(tempMsg)
   nextTick(scrollToBottom)
-  sendToSocket(url, '2')
+  sendToSocket(url, '2', clientMsgId)
 }
 
 // ====== 处理路由跳转私信 ======
@@ -502,7 +540,7 @@ onUnmounted(() => {
 
 .icon-btn:hover {
   background: #f0f2f5;
-  color: #6c5ce7;
+  color: #2563EB;
 }
 
 .messages-scroll {
@@ -527,7 +565,7 @@ onUnmounted(() => {
   height: 88px;
   border-radius: 50%;
   background: #ece9fe;
-  color: #6c5ce7;
+  color: #2563EB;
   display: flex;
   align-items: center;
   justify-content: center;

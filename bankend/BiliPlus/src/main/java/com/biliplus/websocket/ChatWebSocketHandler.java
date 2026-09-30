@@ -100,6 +100,9 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             response.put("conversationId", dto.getConversationId());
             response.put("content", dto.getContent());
             response.put("msgType", dto.getMsgType());
+            if (dto.getClientMsgId() != null) {
+                response.put("clientMsgId", dto.getClientMsgId());
+            }
             response.put("createdAt", msg.getCreateTime() != null
                     ? msg.getCreateTime().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
                     : System.currentTimeMillis());

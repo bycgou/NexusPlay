@@ -91,7 +91,7 @@ onMounted(loadBanners)
     <el-carousel
         :interval="isHovered ? 0 : 4000"
         type="card"
-        :height="'280px'"
+        :height="'400px'"
         @change="handleChange"
         indicator-position="none"
         :arrow="'never'"
@@ -136,8 +136,8 @@ onMounted(loadBanners)
 <style scoped>
 .carousel-container {
   position: relative;
-  max-width: 1200px;
-  margin: var(--space-lg) auto var(--space-xl);
+  max-width: 1440px;
+  margin: var(--space-md) auto var(--space-lg);
   padding: 0 var(--space-md);
 }
 

@@ -147,8 +147,8 @@ const formRules = {
     required: true,
     validator: (rule, value, callback) => {
       const realTags = Array.isArray(value) ? value : [];
-      if (realTags.length === 0) callback(new Error('请至少添加一个标签'));
-      else if (realTags.length > 10) callback(new Error('最多添加 10 个标签'));
+      if (realTags.length < 2) callback(new Error('请至少添加 2 个标签（便于推荐）'));
+      else if (realTags.length > 5) callback(new Error('最多添加 5 个标签'));
       else callback();
     },
     trigger: ['change', 'blur']
@@ -182,7 +182,17 @@ onMounted(async () => {
 });
 
 // 用户状态
-import { useUserStore } from '@/store/user.js';
+import { useUserStore } from '@/store/user.js'
+import { useAuthPrompt } from '@/composables/useAuthPrompt';
+
+const authPrompt = useAuthPrompt();
+
+
+
+
+
+
+
 import {submitContribution} from "@/api/contribution.js";
 const user = useUserStore();
 
@@ -208,7 +218,7 @@ const resetForm = () => {
 const handleSubmit = async () => {
   if (!user.userInfo?.id) {
     ElMessage.error('请先登录');
-    return router.push('/login');
+    return authPrompt.openLogin();
   }
   if (!uploadedFileUrl.value) {
     ElMessage.error('请等待视频上传完成');

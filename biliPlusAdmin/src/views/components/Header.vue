@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -56,6 +56,6 @@ function handleLogout() {
   color: #606266;
 }
 .avatar {
-  background: #f0f2f5;
+  background: linear-gradient(135deg, #2563EB, #60A5FA);
 }
 </style>

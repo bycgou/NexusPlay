@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="search-page">
     <div class="search-header">
       <div class="title-row">
@@ -216,7 +216,7 @@ onMounted(() => {
 }
 
 .kw {
-  color: #6c5ce7;
+  color: #2563EB;
   font-size: 14px;
 }
 
@@ -267,8 +267,8 @@ onMounted(() => {
 }
 
 .user-card:hover {
-  border-color: #6c5ce7;
-  box-shadow: 0 4px 16px rgba(108, 92, 231, 0.12);
+  border-color: #2563EB;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.12);
 }
 
 .user-meta {

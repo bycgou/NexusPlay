@@ -127,7 +127,7 @@ public class DanmakuController {
         return c;
     }
 
-    // 根据视频ID获取弹幕
+    // 根据视频ID获取弹幕（含 id / userId，供举报点选）
     @GetMapping()
     public Result<List<Map<String, Object>>> getDanmaku(
             @RequestParam Long videoId,
@@ -141,6 +141,8 @@ public class DanmakuController {
             // 2. 将查询结果转换为前端（DPlayer）需要的格式
             List<Map<String, Object>> danmakuList = list.stream().map(danmaku -> {
                 Map<String, Object> map = new HashMap<>();
+                map.put("id", danmaku.getId());
+                map.put("userId", danmaku.getUserId());
                 map.put("text", danmaku.getContent());
                 map.put("time", danmaku.getTime()); // 注意：DPlayer的time单位是秒
                 map.put("type", toDplayerType(danmaku.getType()));

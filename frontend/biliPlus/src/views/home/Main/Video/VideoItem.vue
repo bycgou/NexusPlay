@@ -86,7 +86,7 @@ const formatDate = (dateString) => {
 <style scoped>
 .video-col {
   width: 20%;
-  padding: 0 var(--space-sm) var(--space-lg);
+  padding: 0 var(--space-sm) var(--space-md);
   box-sizing: border-box;
 }
 
@@ -175,7 +175,7 @@ const formatDate = (dateString) => {
 }
 
 .video-info {
-  padding: var(--space-md);
+  padding: var(--space-sm) var(--space-md) var(--space-md);
 }
 
 .video-title {

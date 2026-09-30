@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, watch, onUnmounted, nextTick } from 'vue'
 // @ts-ignore svgaplayerweb 无官方类型
 import SVGA from 'svgaplayerweb'
@@ -446,7 +446,7 @@ onUnmounted(() => {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
 }
 .bs-user {
-  color: #fb7299;
+  color: #2563EB;
   font-weight: 700;
   max-width: 160px;
   overflow: hidden;
@@ -467,7 +467,7 @@ onUnmounted(() => {
   font-style: normal;
   font-size: 36px;
   font-weight: 800;
-  color: #fb7299;
+  color: #2563EB;
   line-height: 1;
   letter-spacing: -1px;
 }

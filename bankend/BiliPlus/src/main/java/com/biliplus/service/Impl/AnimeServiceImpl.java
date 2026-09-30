@@ -21,7 +21,7 @@ public class AnimeServiceImpl implements AnimeService {
     @Override
     public PageResult pageQuery(Integer page, Integer pageSize, Integer status, String keyword) {
         PageHelper.startPage(page == null ? 1 : page, pageSize == null ? 20 : pageSize);
-        Page<Anime> result = animeMapper.pageQuery(status, keyword);
+        Page<Anime> result = animeMapper.pageQuery(status, com.biliplus.utils.LikeEscape.prepareKeyword(keyword));
         List<Anime> records = result.getResult();
         return new PageResult(result.getTotal(), records);
     }

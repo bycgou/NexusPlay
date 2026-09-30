@@ -16,6 +16,9 @@ public class AdminNotificationController {
     @Autowired
     private NotificationService notificationService;
 
+    @Autowired
+    private com.biliplus.service.AdminOperationLogService adminOperationLogService;
+
     /** 发送系统通知给全站正常用户 */
     @PostMapping
     public Result<String> send(@RequestBody Map<String, String> body) {
@@ -23,6 +26,7 @@ public class AdminNotificationController {
             String title = body == null ? null : body.get("title");
             String content = body == null ? null : body.get("content");
             notificationService.notifyAll(title, content);
+            adminOperationLogService.record("notification.broadcast", "system", null, title);
             return Result.success("已发送");
         } catch (Exception e) {
             return Result.error(e.getMessage());

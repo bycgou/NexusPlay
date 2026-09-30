@@ -1,6 +1,9 @@
 package com.biliplus.interceptor;
 
+import com.biliplus.mapper.PeopleUserMapper;
+import com.biliplus.pojo.entity.User;
 import com.biliplus.properties.JwtPeopleProperties;
+import com.biliplus.service.UserPenaltyService;
 import com.biliplus.utils.JwtUtil;
 import com.biliplus.utils.UserContext;
 import io.jsonwebtoken.Claims;
@@ -19,31 +22,36 @@ public class JwtTokenPeopleInterceptor implements HandlerInterceptor {
     @Autowired
     private JwtPeopleProperties jwtPeopleProperties;
 
-    /** 允许匿名 GET 浏览的路径前缀（写操作仍需登录） */
-    private static final String[] PUBLIC_GET_PREFIXES = {
-            "/pp/videos/",
-            "/pp/comments",
-            "/pp/user/danmakuv3",
-            "/pp/categories",
-            "/pp/banners",
-            "/pp/people/user/",
-            "/pp/people/search",
-            "/pp/interaction/video/",
-            "/pp/interaction/user/",
-            "/pp/live/rooms",
-            "/pp/live/gifts",
-            "/pp/live/pk/active",
-            "/pp/live/rooms/", // 含详情/stream-status/mic history 等 GET
-            "/pp/live/replays", // 直播回放列表/详情
-            "/pp/dynamics/hot", // 全站动态广场
-            "/pp/dynamics/user/", // 某人动态
-            "/pp/notifications/unread-count", // 未读红点，未登录返回 0 而不是 401
-            "/pp/anime" // 番剧列表/详情
+    @Autowired
+    private UserPenaltyService userPenaltyService;
+
+    @Autowired
+    private PeopleUserMapper peopleUserMapper;
+
+    /** 需要登录才能访问的 GET 路径前缀（其余 GET 默认公开，支持免登录浏览） */
+    private static final String[] PRIVATE_GET_PREFIXES = {
+            "/pp/chat",
+            "/pp/notifications", // 未读数单独放行
+            "/pp/play-history",
+            "/pp/favorite-folders",
+            "/pp/live/wallet",
+            "/pp/live/my-room",
+            "/pp/people/my",
+            "/pp/people/me",
+            "/pp/people/settings",
+            "/pp/interaction/my",
+            "/pp/dynamics/feed", // 关注流
+            "/pp/reports"
     };
 
     /** 允许匿名 POST 的路径（分享计数等只读语义的埋点） */
     private static final java.util.regex.Pattern PUBLIC_POST = java.util.regex.Pattern.compile(
             "^/pp/videos/\\d+/share$"
+    );
+
+    /** 未读红点等个别 GET 需放行，避免顶栏未登录报错 */
+    private static final java.util.regex.Pattern PUBLIC_GET_EXACT = java.util.regex.Pattern.compile(
+            "^/pp/notifications/unread-count$"
     );
 
     @Override
@@ -55,15 +63,19 @@ public class JwtTokenPeopleInterceptor implements HandlerInterceptor {
         String path = request.getRequestURI();
         String method = request.getMethod();
         if ("GET".equalsIgnoreCase(method) || "OPTIONS".equalsIgnoreCase(method)) {
-            boolean isPublicGet = false;
-            for (String prefix : PUBLIC_GET_PREFIXES) {
-                if (path.endsWith(prefix) || path.contains(prefix)) {
-                    isPublicGet = true;
+            boolean isPrivateGet = false;
+            for (String prefix : PRIVATE_GET_PREFIXES) {
+                // 仅前缀匹配，避免 path.contains 误伤
+                if (path.startsWith(prefix)) {
+                    isPrivateGet = true;
                     break;
                 }
             }
-            if (isPublicGet) {
-                // 公开 GET 也要尽量解析 token，否则「是否已关注/已点赞」永远拿不到当前用户
+            if (PUBLIC_GET_EXACT.matcher(path).matches()) {
+                isPrivateGet = false;
+            }
+            // 公开 GET 也要尽量解析 token，否则「是否已关注/已点赞」永远拿不到当前用户
+            if (!isPrivateGet) {
                 trySetCurrentUserFromHeader(request);
                 return true;
             }
@@ -94,6 +106,14 @@ public class JwtTokenPeopleInterceptor implements HandlerInterceptor {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return false;
             }
+            // 封禁用户立即拒绝，避免旧 token 在封禁后继续调用写接口
+            if (isBlocked(userId)) {
+                log.warn("封禁用户尝试访问: userId={}, {} {}", userId, method, path);
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"code\":0,\"msg\":\"账号已被封禁，如有疑问请联系管理员\",\"data\":null}");
+                return false;
+            }
             UserContext.setCurrentUserId(userId);
             request.setAttribute("currentUserId", userId);
             return true;
@@ -102,6 +122,14 @@ public class JwtTokenPeopleInterceptor implements HandlerInterceptor {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return false;
         }
+    }
+
+    private boolean isBlocked(Long userId) {
+        if (userPenaltyService.isBanned(userId)) {
+            return true;
+        }
+        User user = peopleUserMapper.getUserById(userId);
+        return user != null && user.getStatus() != null && user.getStatus() == 0;
     }
 
     /** 公开接口：有 token 则注入当前用户，无 token / 失败也放行 */

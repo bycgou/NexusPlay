@@ -31,6 +31,12 @@ class DynamicServiceImplTest {
     @Mock
     private VideoMapper videoMapper;
 
+    @Mock
+    private SensitiveWordService sensitiveWordService;
+
+    @Mock
+    private UserPenaltyService userPenaltyService;
+
     @InjectMocks
     private DynamicServiceImpl dynamicService;
 

@@ -9,7 +9,7 @@ public interface VideoService {
 
     VideoUploadVO getVideo(Long videoId);
 
-    PageResult recommend();
+    PageResult recommend(Integer page, Integer size);
 
     /** 分享计数：返回该视频最新分享数；匿名调用同样计数 */
     Long share(Long videoId);
