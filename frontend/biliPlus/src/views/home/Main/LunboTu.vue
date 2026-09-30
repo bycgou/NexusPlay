@@ -15,52 +15,47 @@ interface BannerItem {
   linkUrl?: string | null
 }
 
-// 兜底本地数据（接口失败时仍可展示）
-const fallbackImages: BannerItem[] = [
-  {
-    url: '/longshu-banner.jpg',
-    videoId: 38,
-    title: '龙叔经典动作集锦',
-    desc: '回顾成龙电影中的精彩瞬间'
-  },
-  {
-    url: '/chengxiang-kiss.jpg',
-    videoId: 37,
-    title: '城乡爱情故事',
-    desc: '一段跨越城乡的浪漫情缘'
-  },
-  {
-    url: '/sunwukong.jpg',
-    videoId: 45,
-    title: '孙悟空传奇',
-    desc: '西游记中的经典角色解析'
-  }
-]
-
-const images = ref<BannerItem[]>([...fallbackImages])
+// 完全以后台轮播配置为准，不使用前端写死的兜底图
+const images = ref<BannerItem[]>([])
 const activeIndex = ref(0)
 const isHovered = ref(false)
+const loading = ref(false)
+const loadError = ref(false)
 
 const loadBanners = async () => {
+  loading.value = true
+  loadError.value = false
   try {
     const res = await getBanners()
-    if (res.code === 1 && Array.isArray(res.data) && res.data.length > 0) {
-      images.value = res.data.map((item: any) => ({
-        id: item.id,
-        url: item.imageUrl,
-        videoId: item.videoId ?? null,
-        title: item.title,
-        desc: item.description || '',
-        linkType: item.linkType ?? 3,
-        linkUrl: item.linkUrl || null,
-      }))
+    if (res.code === 1 && Array.isArray(res.data)) {
+      images.value = res.data
+        .filter((item: any) => item && item.imageUrl)
+        .map((item: any) => ({
+          id: item.id,
+          url: item.imageUrl,
+          videoId: item.videoId ?? null,
+          title: item.title || '',
+          desc: item.description || '',
+          linkType: item.linkType ?? 3,
+          linkUrl: item.linkUrl || null,
+        }))
+      if (activeIndex.value >= images.value.length) {
+        activeIndex.value = 0
+      }
+    } else {
+      images.value = []
     }
   } catch (e) {
-    console.warn('加载轮播图失败，使用本地兜底数据', e)
+    console.error('加载轮播图失败', e)
+    images.value = []
+    loadError.value = true
+  } finally {
+    loading.value = false
   }
 }
 
 const goToVideo = (item: BannerItem) => {
+  // 1-跳视频 2-外链 3-不跳转（完全按后台配置）
   if (item.linkType === 1 && item.videoId) {
     router.push({ name: 'VideoDetail', params: { id: item.videoId } })
     return
@@ -68,10 +63,6 @@ const goToVideo = (item: BannerItem) => {
   if (item.linkType === 2 && item.linkUrl) {
     window.open(item.linkUrl, '_blank', 'noopener')
     return
-  }
-  // 旧数据无 linkType 时按 videoId 跳转
-  if (item.videoId) {
-    router.push({ name: 'VideoDetail', params: { id: item.videoId } })
   }
 }
 
@@ -84,6 +75,7 @@ onMounted(loadBanners)
 
 <template>
   <div
+      v-if="images.length > 0"
       class="carousel-container"
       @mouseenter="isHovered = true"
       @mouseleave="isHovered = false"
@@ -98,7 +90,7 @@ onMounted(loadBanners)
     >
       <el-carousel-item
           v-for="(item, index) in images"
-          :key="index"
+          :key="item.id ?? index"
           class="carousel-item"
           :class="{ 'active-slide': index === activeIndex }"
           @click="goToVideo(item)"
@@ -114,7 +106,7 @@ onMounted(loadBanners)
           <div class="carousel-caption">
             <div class="caption-tag">精选推荐</div>
             <h3 class="carousel-title">{{ item.title }}</h3>
-            <p class="carousel-desc">{{ item.desc }}</p>
+            <p v-if="item.desc" class="carousel-desc">{{ item.desc }}</p>
           </div>
         </div>
       </el-carousel-item>
@@ -124,7 +116,7 @@ onMounted(loadBanners)
     <div class="carousel-indicators">
       <button
           v-for="(item, index) in images"
-          :key="index"
+          :key="item.id ?? index"
           @click.stop="activeIndex = index"
           :class="{ 'indicator-active': index === activeIndex }"
           :aria-label="`切换到第 ${index + 1} 张`"
