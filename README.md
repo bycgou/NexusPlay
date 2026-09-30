@@ -1,6 +1,6 @@
 # NexusPlay（BiliPlus）
 
-B 站风格的视频社区：投稿与弹幕播放、评论关注、站内通知、直播礼物与 PK、钱包账变、内容举报治理。
+B 站风格的视频社区：投稿与弹幕播放、评论关注、站内通知、直播礼物与 PK、钱包账变、内容举报治理、热度推荐与热榜。
 
 项目分三端，同一套后端 API：
 
@@ -9,7 +9,7 @@ B 站风格的视频社区：投稿与弹幕播放、评论关注、站内通知
 | `bankend/BiliPlus` | 后端 API（Spring Boot 3.2 + MyBatis + MySQL + Redis + WebSocket） |
 | `frontend/biliPlus` | 用户前台（Vue 3 + Vite 7 + TypeScript + Element Plus） |
 | `biliPlusAdmin` | 管理后台（Vue 3 + Vite + Element Plus） |
-| `bankend/BiliPlus/sql/biliplus.sql` | 数据库基线，37 张表，含全部新表 |
+| `bankend/BiliPlus/sql/biliplus.sql` | 数据库基线，44 张表，含推荐池与内容治理表 |
 
 ---
 
@@ -19,22 +19,40 @@ B 站风格的视频社区：投稿与弹幕播放、评论关注、站内通知
 
 - **账号**：邮箱验证码注册、登录（JWT 双端）、个人资料、修改密码、个人空间
 - **视频**：分片投稿、分类频道、搜索、DPlayer 弹幕播放、点赞 / 收藏 / 关注、分享链接与分享计数
+- **推荐与热榜**：首页推荐流（`video_feature` 热度分池，定时刷新）、热榜 TopN（`HotRankPanel`）、播放页推荐侧栏
 - **播放设置**：弹幕开关 / 透明度 / 字号 / 滚动速度 / 显示区域、倍速、默认音量、进度记忆、自动连播；设置页与播放器共用同一份默认值常量，改完即时生效
 - **我的稿件**：编辑标题 / 简介 / 分区 / 封面 / 标签，驳回后重新提交，软删除；列表显示审核状态与驳回原因
 - **社区**：评论与回复、站内通知（Header 铃铛红点，登录后 30 秒轮询）、播放历史（登录后跨设备续播）、收藏夹、动态 Feed（关注流 / 全站广场）、内容举报
 - **直播**：开播与观看、礼物打赏（SVGA 特效）、主播发起 PK、连麦信令（未配置 RTC 时明确降级提示）、直播回放、充值订单与账变明细
 - **私信**：WebSocket 实时会话
+- **设置中心**：资料 / 安全 / 播放 / 画质 / 通知 / 隐私 / 快捷键 等分区
 - **番剧**：番剧方格广场（详情页尚未实现）
 
 ### 管理后台
 
-- 视频审核：通过 / 驳回（填原因）/ 下架
-- 分类、轮播图、直播房间与分区、礼物、打赏流水
+- **数据看板**：今日 / 累计 KPI，近 N 日注册、投稿、礼物趋势
+- **视频审核**：通过 / 驳回（填原因）/ 下架；通过后自动进入推荐池
+- **用户管理**：列表 / 详情、禁言 / 封禁（可设时长）、解禁、角色调整
+- **内容治理**：举报处理（成立时联动下架视频或软删评论）、敏感词词库与命中日志、误伤复核、治理报表（举报 SLA、时效趋势、Top 违规用户、违规曝光率）
+- **运营配置**：分类、轮播图、直播房间与分区、礼物、打赏流水
 - **钱包账变**：按用户 / 类型 / 业务类型 / 日期区间对账
-- **举报处理**：举报成立时联动下架视频或软删评论
 - **系统通知**：向全站正常用户广播
+- **操作日志**：管理端动作留痕，只读查询
 
-> 尚未实现：数据看板、用户管理与封禁、操作日志、番剧详情页、推荐算法增强。
+> 尚未实现：番剧详情页、真实支付网关 / CDN、更复杂的多路召回推荐。
+
+---
+
+## 安全与内容治理
+
+- **统一安全响应头**：`X-Content-Type-Options`、`X-Frame-Options`、`Referrer-Policy`、`Permissions-Policy`
+- **登录 / 发信限速**：基于 Redis 的滑动窗口计数（`LoginRateLimiter`）
+- **双端 JWT 鉴权**：用户端 / 管理端独立密钥与拦截器；公开 GET 白名单可匿名访问
+- **敏感词治理**：发布链路统一入口；「拦截」级中断发布，「记录」级写命中日志；支持误伤复核
+- **信用分与处置**：违规扣分，低于阈值自动禁言；封禁 / 禁言可设时长
+- **事件与审计**：`event_log` 记录关键业务事件，`admin_operation_log` 记录管理端操作
+
+安全评估与修复过程文档见仓库根目录：`SECURITY_ASSESSMENT.md`、`SECURITY_FIX_PLAN.md`、`SECURITY_MODIFICATION_PLAN.md`、`PENTEST_REPORT.md`。
 
 ---
 
@@ -66,7 +84,7 @@ B 站风格的视频社区：投稿与弹幕播放、评论关注、站内通知
 -- 建库
 CREATE DATABASE biliplus DEFAULT CHARACTER SET utf8mb4;
 
--- 导入基线（单文件，含全部 37 张表）
+-- 导入基线（单文件，含全部 44 张表）
 mysql -u root -p biliplus < bankend/BiliPlus/sql/biliplus.sql
 ```
 
@@ -86,7 +104,7 @@ mvn spring-boot:run              # 监听 :8081
 | 变量 | 说明 |
 |------|------|
 | `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USERNAME` / `DB_PASSWORD` | 数据库连接 |
-| `REDIS_HOST` / `REDIS_PORT` | Redis |
+| `REDIS_HOST` / `REDIS_PORT` | Redis（登录限速、缓存） |
 | `JWT_ADMIN_SECRET` / `JWT_PEOPLE_SECRET` | 双端 JWT 密钥，生产必须换成高强度随机串 |
 | `VIDEO_UPLOAD_PATH` / `IMAGE_UPLOAD_PATH` | 视频与图片本地存储目录（结尾保留斜杠） |
 | `CORS_ALLOWED_ORIGINS` | 跨域来源，逗号分隔 |
@@ -181,22 +199,31 @@ bankend/BiliPlus/src/main/java/com/biliplus/
   websocket/                               /ws/chat 私信、/ws/live 直播
   constant/                                视频状态、账变类型、通知类型等枚举
   interceptor/                             JWT 用户端 / 管理端鉴权
-  config/                                  CORS、静态资源、WebSocket
+  config/                                  CORS、安全响应头、静态资源、WebSocket
+  utils/                                   JWT、登录限速、媒体地址、分片元数据等
 
 frontend/biliPlus/src/
-  api/              接口封装
+  api/              接口封装（含 getHotVideos / getRecommendVideos）
   composables/      useLocalSettings、useLiveSocket、useVideoProgress…
   constants/        播放设置默认值（设置页与播放器共用）
   views/            home/ live/ setting/ notify/ dynamic/ anime/ chat/…
   router/           路由与登录守卫
 
 biliPlusAdmin/src/
-  api/  views/  router/                     审核、直播、礼物、账变、举报、通知
+  views/            Dashboard、VideoShenHe、UserManage、GovernanceDashboard、
+                    SensitiveWordManage、OperationLog、ReportManage、WalletTx、
+                    LiveManage、GiftManage、NotificationSend…
 
-bankend/BiliPlus/sql/biliplus.sql           数据库基线（37 表）
+bankend/BiliPlus/sql/biliplus.sql           数据库基线（44 表）
 bankend/BiliPlus/.env.template              后端环境变量模板
 frontend/biliPlus/.env.development          前台开发环境变量
 ```
+
+### 推荐与热榜链路
+
+1. 视频审核通过后 `VideoFeatureService.enterPool` 写入 `video_feature` 推荐池。
+2. 定时任务每 5 分钟对齐推荐池并刷新热度分（`refreshHotScores`）。
+3. 用户前台通过 `GET /pp/videos/recommend` 拉推荐流，`GET /pp/videos/hot` 拉热榜 TopN（首页 `HotRankPanel`）。
 
 ---
 
@@ -205,7 +232,16 @@ frontend/biliPlus/.env.development          前台开发环境变量
 - 用户端前缀 `/pp/**`，管理端前缀 `/admin/**`
 - 统一响应：`{ code: 1 成功 / 0 失败, msg, data }`
 - 鉴权：请求头 `Authorization: Bearer <token>`；未登录访问个人接口返回 401，前端跳转登录页
-- 公开 GET（视频、评论、分类、轮播、直播广场、番剧、全站动态等）不需要登录
+- 公开 GET（视频、评论、分类、轮播、直播广场、番剧、全站动态、推荐、热榜等）不需要登录
+
+常用公开接口示例：
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/pp/videos` | 视频分页（可按分类 / 标题） |
+| GET | `/pp/videos/recommend` | 推荐流（page / size） |
+| GET | `/pp/videos/hot` | 热榜 TopN（size） |
+| GET | `/pp/videos/{videoId}` | 视频详情 |
 
 ---
 
