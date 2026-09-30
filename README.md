@@ -1,4 +1,4 @@
-<img width="1920" height="1031" alt="image" src="https://github.com/user-attachments/assets/e3211d60-70fe-40b1-9a59-8709abc3fbf2" /># NexusPlay
+# NexusPlay
 
 B 站风格的视频社区：投稿与弹幕播放、评论关注、站内通知、直播礼物与 PK、钱包账变、内容举报治理、热度推荐与热榜。
 
@@ -13,6 +13,8 @@ B 站风格的视频社区：投稿与弹幕播放、评论关注、站内通知
 
 ---
 
+<img width="1920" height="1031" alt="image" src="https://github.com/user-attachments/assets/36043416-7590-4ca9-88cc-ffd3f8d719a5" />
+<img width="1920" height="1031" alt="image" src="https://github.com/user-attachments/assets/3fa93ff7-5c24-46bf-b436-41406095c3e6" />
 
 
 ## 功能
