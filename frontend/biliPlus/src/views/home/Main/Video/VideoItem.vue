@@ -92,6 +92,7 @@ const formatDate = (dateString) => {
 
 .video-card {
   width: 100%;
+  height: 100%;
   cursor: pointer;
   background: var(--paper-white);
   border-radius: var(--radius-md);
@@ -179,7 +180,7 @@ const formatDate = (dateString) => {
 }
 
 .video-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--ink);
   margin: 0 0 var(--space-sm);
@@ -187,8 +188,8 @@ const formatDate = (dateString) => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  line-height: 1.4;
-  min-height: 39px;
+  line-height: 1.45;
+  min-height: 44px;
   transition: color var(--transition-fast);
 }
 

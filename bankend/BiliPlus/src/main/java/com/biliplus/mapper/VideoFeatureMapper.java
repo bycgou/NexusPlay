@@ -21,6 +21,18 @@ public interface VideoFeatureMapper {
     @Update("UPDATE video_feature SET pool_status = 0 WHERE video_id = #{videoId}")
     int leavePool(@Param("videoId") Long videoId);
 
+    /** 补齐存量已上架视频入池，避免推荐/热榜空窗 */
+    @Insert("INSERT IGNORE INTO video_feature(video_id, duration_sec, is_original, hot_score, pool_status) " +
+            "SELECT v.id, v.duration_sec, IFNULL(v.is_original, 1), 0, 1 " +
+            "FROM video v WHERE v.status = 1")
+    int ensurePool();
+
+    /** 非上架视频出池（与 video.status 对齐） */
+    @Update("UPDATE video_feature f JOIN video v ON v.id = f.video_id " +
+            "SET f.pool_status = 0, f.update_time = NOW() " +
+            "WHERE f.pool_status = 1 AND (v.status IS NULL OR v.status <> 1)")
+    int markOffline();
+
     /** 周期刷新热度（可由定时任务或推荐前调用） */
     @Update("UPDATE video_feature f " +
             "JOIN video v ON v.id = f.video_id " +

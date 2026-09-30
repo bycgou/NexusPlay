@@ -91,7 +91,7 @@ onMounted(loadBanners)
     <el-carousel
         :interval="isHovered ? 0 : 4000"
         type="card"
-        :height="'400px'"
+        :height="'300px'"
         @change="handleChange"
         indicator-position="none"
         :arrow="'never'"

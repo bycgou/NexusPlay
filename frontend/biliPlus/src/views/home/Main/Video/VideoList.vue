@@ -57,7 +57,7 @@ const props = defineProps({
 .video-list-container {
   max-width: 1440px;
   margin: 0 auto;
-  padding: var(--space-md) var(--space-md) var(--space-lg);
+  padding: var(--space-sm) var(--space-md) var(--space-lg);
 }
 
 .list-header {

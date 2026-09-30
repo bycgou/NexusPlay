@@ -7,6 +7,7 @@ import com.biliplus.pojo.dto.userdto.VideoPageQueryDTO;
 import com.biliplus.pojo.entity.User;
 import com.biliplus.pojo.entity.Video;
 import com.biliplus.pojo.vo.GetListVideoVO;
+import com.biliplus.pojo.vo.HotVideoVO;
 import com.biliplus.pojo.vo.VideoUploadVO;
 import com.biliplus.result.PageResult;
 import com.biliplus.service.VideoService;
@@ -136,6 +137,22 @@ public class VideoServiceImpl implements VideoService {
         // 显式 LIMIT，避免复杂 SQL 下 PageHelper 失效导致全量返回
         Page<GetListVideoVO> result = videoMapper.recommend(offset, s);
         return new PageResult(result.getTotal(), result.getResult());
+    }
+
+    @Override
+    public List<HotVideoVO> hot(Integer size) {
+        int s = size == null || size < 1 ? 20 : Math.min(size, 50);
+        List<HotVideoVO> list = videoMapper.hotRank(s);
+        if (list == null) {
+            return new ArrayList<>();
+        }
+        for (int i = 0; i < list.size(); i++) {
+            HotVideoVO vo = list.get(i);
+            if (vo != null) {
+                vo.setRank(i + 1);
+            }
+        }
+        return list;
     }
 
     @Override

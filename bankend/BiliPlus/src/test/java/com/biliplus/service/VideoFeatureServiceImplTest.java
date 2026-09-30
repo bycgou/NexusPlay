@@ -8,6 +8,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -44,5 +46,36 @@ class VideoFeatureServiceImplTest {
     void leavePool_shouldCallMapper() {
         videoFeatureService.leavePool(9L);
         verify(videoFeatureMapper).leavePool(9L);
+    }
+
+    @Test
+    void ensurePool_shouldSyncPoolAndMarkOffline() {
+        when(videoFeatureMapper.ensurePool()).thenReturn(3);
+        when(videoFeatureMapper.markOffline()).thenReturn(1);
+        assertTrue(videoFeatureService.ensurePool());
+        verify(videoFeatureMapper).ensurePool();
+        verify(videoFeatureMapper).markOffline();
+    }
+
+    @Test
+    void refreshHotScores_shouldReturnUpdatedCount() {
+        when(videoFeatureMapper.refreshHotScores()).thenReturn(12);
+        assertEquals(12, videoFeatureService.refreshHotScores());
+    }
+
+    @Test
+    void scheduledRefresh_shouldEnsureThenRefresh() {
+        when(videoFeatureMapper.ensurePool()).thenReturn(0);
+        when(videoFeatureMapper.markOffline()).thenReturn(0);
+        when(videoFeatureMapper.refreshHotScores()).thenReturn(5);
+        videoFeatureService.scheduledRefresh();
+        verify(videoFeatureMapper).ensurePool();
+        verify(videoFeatureMapper).refreshHotScores();
+    }
+
+    @Test
+    void refreshHotScores_whenMapperFails_shouldReturnZero() {
+        when(videoFeatureMapper.refreshHotScores()).thenThrow(new RuntimeException("db"));
+        assertEquals(0, videoFeatureService.refreshHotScores());
     }
 }

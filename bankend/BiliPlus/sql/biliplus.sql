@@ -1,4 +1,4 @@
-/*
+﻿/*
  Navicat Premium Data Transfer
 
  Source Server         : bycg
@@ -34,43 +34,43 @@ CREATE TABLE `admin_user`  (
 -- ----------------------------
 DROP TABLE IF EXISTS `anime`;
 CREATE TABLE `anime`  (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '番剧ID',
-  `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '番剧标题',
-  `cover_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '封面URL',
-  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '番剧描述',
-  `total_episodes` int NOT NULL DEFAULT 0 COMMENT '总集数',
-  `aired_episodes` int NOT NULL DEFAULT 0 COMMENT '已播出集数',
-  `status` tinyint NOT NULL COMMENT '状态：0-未播出，1-连载中，2-已完结',
-  `score` decimal(2, 1) NULL DEFAULT NULL COMMENT '评分',
-  `follower_count` int NOT NULL DEFAULT 0 COMMENT '追番数',
-  `release_time` date NULL DEFAULT NULL COMMENT '上映时间',
-  `end_time` date NULL DEFAULT NULL COMMENT '完结时间',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '鐣墽ID',
+  `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '鐣墽鏍囬',
+  `cover_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '灏侀潰URL',
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '鐣墽鎻忚堪',
+  `total_episodes` int NOT NULL DEFAULT 0 COMMENT '鎬婚泦鏁?,
+  `aired_episodes` int NOT NULL DEFAULT 0 COMMENT '宸叉挱鍑洪泦鏁?,
+  `status` tinyint NOT NULL COMMENT '鐘舵€侊細0-鏈挱鍑猴紝1-杩炶浇涓紝2-宸插畬缁?,
+  `score` decimal(2, 1) NULL DEFAULT NULL COMMENT '璇勫垎',
+  `follower_count` int NOT NULL DEFAULT 0 COMMENT '杩界暘鏁?,
+  `release_time` date NULL DEFAULT NULL COMMENT '涓婃槧鏃堕棿',
+  `end_time` date NULL DEFAULT NULL COMMENT '瀹岀粨鏃堕棿',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '鏇存柊鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE,
   INDEX `idx_score`(`score` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '番剧表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鐣墽琛? ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for anime_episode
 -- ----------------------------
 DROP TABLE IF EXISTS `anime_episode`;
 CREATE TABLE `anime_episode`  (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '剧集ID',
-  `anime_id` bigint NOT NULL COMMENT '番剧ID',
-  `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '剧集标题',
-  `episode_num` int NOT NULL COMMENT '集数',
-  `video_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '视频URL',
-  `duration` int NOT NULL COMMENT '时长(秒)',
-  `view_count` int NOT NULL DEFAULT 0 COMMENT '播放量',
-  `release_time` datetime NULL DEFAULT NULL COMMENT '发布时间',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '鍓ч泦ID',
+  `anime_id` bigint NOT NULL COMMENT '鐣墽ID',
+  `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '鍓ч泦鏍囬',
+  `episode_num` int NOT NULL COMMENT '闆嗘暟',
+  `video_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '瑙嗛URL',
+  `duration` int NOT NULL COMMENT '鏃堕暱(绉?',
+  `view_count` int NOT NULL DEFAULT 0 COMMENT '鎾斁閲?,
+  `release_time` datetime NULL DEFAULT NULL COMMENT '鍙戝竷鏃堕棿',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '鏇存柊鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_anime_id`(`anime_id` ASC) USING BTREE,
   INDEX `idx_episode_num`(`episode_num` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '番剧剧集表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鐣墽鍓ч泦琛? ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for banner
@@ -78,53 +78,53 @@ CREATE TABLE `anime_episode`  (
 DROP TABLE IF EXISTS `banner`;
 CREATE TABLE `banner`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `title` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '标题',
-  `description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '描述',
-  `image_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '图片URL',
-  `link_type` tinyint NOT NULL DEFAULT 1 COMMENT '跳转类型：1-视频 2-外链 3-不跳转',
-  `video_id` bigint NULL DEFAULT NULL COMMENT '关联视频ID（link_type=1）',
-  `link_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '外链（link_type=2）',
-  `sort_order` int NOT NULL DEFAULT 0 COMMENT '排序，越小越靠前',
-  `status` tinyint NOT NULL DEFAULT 1 COMMENT '状态：0-下线 1-上线',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `title` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '鏍囬',
+  `description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '鎻忚堪',
+  `image_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '鍥剧墖URL',
+  `link_type` tinyint NOT NULL DEFAULT 1 COMMENT '璺宠浆绫诲瀷锛?-瑙嗛 2-澶栭摼 3-涓嶈烦杞?,
+  `video_id` bigint NULL DEFAULT NULL COMMENT '鍏宠仈瑙嗛ID锛坙ink_type=1锛?,
+  `link_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '澶栭摼锛坙ink_type=2锛?,
+  `sort_order` int NOT NULL DEFAULT 0 COMMENT '鎺掑簭锛岃秺灏忚秺闈犲墠',
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT '鐘舵€侊細0-涓嬬嚎 1-涓婄嚎',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '鏇存柊鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_status_sort`(`status` ASC, `sort_order` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '首页轮播图表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '棣栭〉杞挱鍥捐〃' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for category
 -- ----------------------------
 DROP TABLE IF EXISTS `category`;
 CREATE TABLE `category`  (
-  `id` int NOT NULL AUTO_INCREMENT COMMENT '分类ID',
-  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '分类名称',
-  `parent_id` int NOT NULL DEFAULT 0 COMMENT '父分类ID',
-  `sort_order` int NOT NULL DEFAULT 0 COMMENT '排序',
-  `icon` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '图标URL',
-  `type` tinyint NOT NULL DEFAULT 1 COMMENT '1视频分区 2直播分区',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `id` int NOT NULL AUTO_INCREMENT COMMENT '鍒嗙被ID',
+  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '鍒嗙被鍚嶇О',
+  `parent_id` int NOT NULL DEFAULT 0 COMMENT '鐖跺垎绫籌D',
+  `sort_order` int NOT NULL DEFAULT 0 COMMENT '鎺掑簭',
+  `icon` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '鍥炬爣URL',
+  `type` tinyint NOT NULL DEFAULT 1 COMMENT '1瑙嗛鍒嗗尯 2鐩存挱鍒嗗尯',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '鏇存柊鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_parent_id`(`parent_id` ASC) USING BTREE,
   INDEX `idx_type`(`type` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 20 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '分类表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 20 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鍒嗙被琛? ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for chat_conversation
 -- ----------------------------
 DROP TABLE IF EXISTS `chat_conversation`;
 CREATE TABLE `chat_conversation`  (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '会话ID',
-  `type` tinyint NOT NULL DEFAULT 1 COMMENT '会话类型：1-私聊，2-群聊',
-  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '群聊名称（私聊时为NULL）',
-  `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '群头像（私聊时为NULL）',
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '浼氳瘽ID',
+  `type` tinyint NOT NULL DEFAULT 1 COMMENT '浼氳瘽绫诲瀷锛?-绉佽亰锛?-缇よ亰',
+  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '缇よ亰鍚嶇О锛堢鑱婃椂涓篘ULL锛?,
+  `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '缇ゅご鍍忥紙绉佽亰鏃朵负NULL锛?,
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_type`(`type` ASC) USING BTREE,
   INDEX `idx_update_time`(`update_time` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 14 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '聊天会话表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 14 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鑱婂ぉ浼氳瘽琛? ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for chat_conversation_member
@@ -132,30 +132,30 @@ CREATE TABLE `chat_conversation`  (
 DROP TABLE IF EXISTS `chat_conversation_member`;
 CREATE TABLE `chat_conversation_member`  (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `conversation_id` bigint NOT NULL COMMENT '会话ID',
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `unread_count` int NOT NULL DEFAULT 0 COMMENT '未读消息数（持久化部分）',
-  `last_read_msg_id` bigint NULL DEFAULT NULL COMMENT '最后已读的消息ID',
-  `join_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '加入时间',
-  `leave_time` datetime NULL DEFAULT NULL COMMENT '退出时间（NULL表示未退出）',
+  `conversation_id` bigint NOT NULL COMMENT '浼氳瘽ID',
+  `user_id` bigint NOT NULL COMMENT '鐢ㄦ埛ID',
+  `unread_count` int NOT NULL DEFAULT 0 COMMENT '鏈娑堟伅鏁帮紙鎸佷箙鍖栭儴鍒嗭級',
+  `last_read_msg_id` bigint NULL DEFAULT NULL COMMENT '鏈€鍚庡凡璇荤殑娑堟伅ID',
+  `join_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍔犲叆鏃堕棿',
+  `leave_time` datetime NULL DEFAULT NULL COMMENT '閫€鍑烘椂闂达紙NULL琛ㄧず鏈€€鍑猴級',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_conv_user`(`conversation_id` ASC, `user_id` ASC) USING BTREE,
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
   INDEX `idx_conv_id`(`conversation_id` ASC) USING BTREE,
   CONSTRAINT `fk_cmem_conv` FOREIGN KEY (`conversation_id`) REFERENCES `chat_conversation` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `fk_cmem_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 25 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '会话成员表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 25 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '浼氳瘽鎴愬憳琛? ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for chat_message
 -- ----------------------------
 DROP TABLE IF EXISTS `chat_message`;
 CREATE TABLE `chat_message`  (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '消息ID',
-  `conversation_id` bigint NOT NULL COMMENT '所属会话ID',
-  `sender_id` bigint NOT NULL COMMENT '发送者用户ID',
-  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '消息内容（JSON格式，支持富文本）',
-  `msg_type` tinyint NOT NULL DEFAULT 1 COMMENT '消息类型：1-文本，2-图片，3-链接，4-表情，5-文件',
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '娑堟伅ID',
+  `conversation_id` bigint NOT NULL COMMENT '鎵€灞炰細璇滻D',
+  `sender_id` bigint NOT NULL COMMENT '鍙戦€佽€呯敤鎴稩D',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '娑堟伅鍐呭锛圝SON鏍煎紡锛屾敮鎸佸瘜鏂囨湰锛?,
+  `msg_type` tinyint NOT NULL DEFAULT 1 COMMENT '娑堟伅绫诲瀷锛?-鏂囨湰锛?-鍥剧墖锛?-閾炬帴锛?-琛ㄦ儏锛?-鏂囦欢',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
@@ -164,48 +164,48 @@ CREATE TABLE `chat_message`  (
   INDEX `idx_create_time`(`create_time` ASC) USING BTREE,
   CONSTRAINT `fk_msg_conv` FOREIGN KEY (`conversation_id`) REFERENCES `chat_conversation` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `fk_msg_sender` FOREIGN KEY (`sender_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 79 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '聊天消息表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 79 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鑱婂ぉ娑堟伅琛? ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for comment
 -- ----------------------------
 DROP TABLE IF EXISTS `comment`;
 CREATE TABLE `comment`  (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '评论ID',
-  `video_id` bigint NOT NULL COMMENT '视频ID',
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '评论内容',
-  `parent_id` bigint NULL DEFAULT 0 COMMENT '父评论ID，0表示顶级评论',
-  `like_count` int NOT NULL DEFAULT 0 COMMENT '点赞数',
-  `status` tinyint NOT NULL DEFAULT 1 COMMENT '状态：0-删除，1-正常',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '璇勮ID',
+  `video_id` bigint NOT NULL COMMENT '瑙嗛ID',
+  `user_id` bigint NOT NULL COMMENT '鐢ㄦ埛ID',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '璇勮鍐呭',
+  `parent_id` bigint NULL DEFAULT 0 COMMENT '鐖惰瘎璁篒D锛?琛ㄧず椤剁骇璇勮',
+  `like_count` int NOT NULL DEFAULT 0 COMMENT '鐐硅禐鏁?,
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT '鐘舵€侊細0-鍒犻櫎锛?-姝ｅ父',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '鏇存柊鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_video_id`(`video_id` ASC) USING BTREE,
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
   INDEX `idx_parent_id`(`parent_id` ASC) USING BTREE,
   INDEX `idx_create_time`(`create_time` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 47 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '评论表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 47 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '璇勮琛? ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for danmaku
 -- ----------------------------
 DROP TABLE IF EXISTS `danmaku`;
 CREATE TABLE `danmaku`  (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '弹幕ID',
-  `video_id` bigint NOT NULL COMMENT '视频ID',
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `content` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '弹幕内容',
-  `time` int NOT NULL COMMENT '出现时间(秒)',
-  `color` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT 'FFFFFF' COMMENT '颜色(十六进制)',
-  `type` tinyint NOT NULL DEFAULT 1 COMMENT '类型：1-滚动，2-顶部，3-底部',
-  `status` tinyint NOT NULL DEFAULT 1 COMMENT '状态：0-屏蔽，1-正常',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '寮瑰箷ID',
+  `video_id` bigint NOT NULL COMMENT '瑙嗛ID',
+  `user_id` bigint NOT NULL COMMENT '鐢ㄦ埛ID',
+  `content` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '寮瑰箷鍐呭',
+  `time` int NOT NULL COMMENT '鍑虹幇鏃堕棿(绉?',
+  `color` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT 'FFFFFF' COMMENT '棰滆壊(鍗佸叚杩涘埗)',
+  `type` tinyint NOT NULL DEFAULT 1 COMMENT '绫诲瀷锛?-婊氬姩锛?-椤堕儴锛?-搴曢儴',
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT '鐘舵€侊細0-灞忚斀锛?-姝ｅ父',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_video_id`(`video_id` ASC) USING BTREE,
   INDEX `idx_video_time`(`video_id` ASC, `time` ASC) USING BTREE,
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 38 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '弹幕表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 38 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '寮瑰箷琛? ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for dynamic
@@ -213,18 +213,18 @@ CREATE TABLE `danmaku`  (
 DROP TABLE IF EXISTS `dynamic`;
 CREATE TABLE `dynamic`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `user_id` bigint NOT NULL COMMENT '发布者',
-  `type` tinyint NOT NULL COMMENT '1文字 2投稿视频 3转发 4开播',
-  `content` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '正文',
-  `video_id` bigint NULL DEFAULT NULL COMMENT '关联视频ID',
-  `origin_dynamic_id` bigint NULL DEFAULT NULL COMMENT '转发的原动态ID',
-  `live_room_id` bigint NULL DEFAULT NULL COMMENT '关联直播间ID',
-  `status` tinyint NOT NULL DEFAULT 1 COMMENT '1正常 0删除',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `user_id` bigint NOT NULL COMMENT '鍙戝竷鑰?,
+  `type` tinyint NOT NULL COMMENT '1鏂囧瓧 2鎶曠瑙嗛 3杞彂 4寮€鎾?,
+  `content` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '姝ｆ枃',
+  `video_id` bigint NULL DEFAULT NULL COMMENT '鍏宠仈瑙嗛ID',
+  `origin_dynamic_id` bigint NULL DEFAULT NULL COMMENT '杞彂鐨勫師鍔ㄦ€両D',
+  `live_room_id` bigint NULL DEFAULT NULL COMMENT '鍏宠仈鐩存挱闂碔D',
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT '1姝ｅ父 0鍒犻櫎',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_user_time`(`user_id` ASC, `create_time` ASC) USING BTREE,
   INDEX `idx_type_status`(`type` ASC, `status` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户动态' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鐢ㄦ埛鍔ㄦ€? ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for dynamic_like
@@ -232,12 +232,12 @@ CREATE TABLE `dynamic`  (
 DROP TABLE IF EXISTS `dynamic_like`;
 CREATE TABLE `dynamic_like`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `dynamic_id` bigint NOT NULL COMMENT '动态ID',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `user_id` bigint NOT NULL COMMENT '鐢ㄦ埛ID',
+  `dynamic_id` bigint NOT NULL COMMENT '鍔ㄦ€両D',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_user_dyn`(`user_id` ASC, `dynamic_id` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '动态点赞' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鍔ㄦ€佺偣璧? ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for favorite_folder
@@ -245,14 +245,14 @@ CREATE TABLE `dynamic_like`  (
 DROP TABLE IF EXISTS `favorite_folder`;
 CREATE TABLE `favorite_folder`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '收藏夹名称',
-  `is_default` tinyint NOT NULL DEFAULT 0 COMMENT '1为默认收藏夹（不可删除）',
-  `is_private` tinyint NOT NULL DEFAULT 0 COMMENT '1私密',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `user_id` bigint NOT NULL COMMENT '鐢ㄦ埛ID',
+  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '鏀惰棌澶瑰悕绉?,
+  `is_default` tinyint NOT NULL DEFAULT 0 COMMENT '1涓洪粯璁ゆ敹钘忓す锛堜笉鍙垹闄わ級',
+  `is_private` tinyint NOT NULL DEFAULT 0 COMMENT '1绉佸瘑',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_user`(`user_id` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '收藏夹' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鏀惰棌澶? ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for gift
@@ -262,13 +262,13 @@ CREATE TABLE `gift`  (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `icon_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `price` int NOT NULL COMMENT '硬币价格',
-  `effect_level` tinyint NOT NULL DEFAULT 1 COMMENT '1普通 2中等 3全屏',
+  `price` int NOT NULL COMMENT '纭竵浠锋牸',
+  `effect_level` tinyint NOT NULL DEFAULT 1 COMMENT '1鏅€?2涓瓑 3鍏ㄥ睆',
   `sort_order` int NOT NULL DEFAULT 0,
   `status` tinyint NOT NULL DEFAULT 1,
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 38 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '礼物目录' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 38 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '绀肩墿鐩綍' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for gift_record
@@ -277,7 +277,7 @@ DROP TABLE IF EXISTS `gift_record`;
 CREATE TABLE `gift_record`  (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `live_room_id` bigint NOT NULL,
-  `pk_id` bigint NULL DEFAULT NULL COMMENT '若在PK中则计入比分',
+  `pk_id` bigint NULL DEFAULT NULL COMMENT '鑻ュ湪PK涓垯璁″叆姣斿垎',
   `gift_id` bigint NOT NULL,
   `sender_id` bigint NOT NULL,
   `host_user_id` bigint NOT NULL,
@@ -290,7 +290,7 @@ CREATE TABLE `gift_record`  (
   INDEX `idx_sender`(`sender_id` ASC) USING BTREE,
   INDEX `idx_host`(`host_user_id` ASC) USING BTREE,
   INDEX `idx_pk`(`pk_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 16 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '打赏流水' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 16 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鎵撹祻娴佹按' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for host_income
@@ -301,7 +301,7 @@ CREATE TABLE `host_income`  (
   `total_income` bigint NOT NULL DEFAULT 0,
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`user_id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '主播收益汇总（提现后续）' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '涓绘挱鏀剁泭姹囨€伙紙鎻愮幇鍚庣画锛? ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for live_mic_session
@@ -312,14 +312,14 @@ CREATE TABLE `live_mic_session`  (
   `live_room_id` bigint NOT NULL,
   `host_user_id` bigint NOT NULL,
   `guest_user_id` bigint NOT NULL,
-  `status` tinyint NOT NULL DEFAULT 0 COMMENT '0申请 1进行中 2结束 3拒绝',
+  `status` tinyint NOT NULL DEFAULT 0 COMMENT '0鐢宠 1杩涜涓?2缁撴潫 3鎷掔粷',
   `start_time` datetime NULL DEFAULT NULL,
   `end_time` datetime NULL DEFAULT NULL,
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_room`(`live_room_id` ASC) USING BTREE,
   INDEX `idx_guest`(`guest_user_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '直播连麦会话' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鐩存挱杩為害浼氳瘽' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for live_pk
@@ -331,7 +331,7 @@ CREATE TABLE `live_pk`  (
   `room_b_id` bigint NOT NULL,
   `host_a_id` bigint NOT NULL,
   `host_b_id` bigint NOT NULL,
-  `status` tinyint NOT NULL DEFAULT 0 COMMENT '0邀请 1进行 2结束 3取消',
+  `status` tinyint NOT NULL DEFAULT 0 COMMENT '0閭€璇?1杩涜 2缁撴潫 3鍙栨秷',
   `score_a` int NOT NULL DEFAULT 0,
   `score_b` int NOT NULL DEFAULT 0,
   `start_time` datetime NULL DEFAULT NULL,
@@ -342,7 +342,7 @@ CREATE TABLE `live_pk`  (
   INDEX `idx_status`(`status` ASC) USING BTREE,
   INDEX `idx_room_a`(`room_a_id` ASC) USING BTREE,
   INDEX `idx_room_b`(`room_b_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '直播PK' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鐩存挱PK' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for live_replay
@@ -350,45 +350,45 @@ CREATE TABLE `live_pk`  (
 DROP TABLE IF EXISTS `live_replay`;
 CREATE TABLE `live_replay`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `live_room_id` bigint NOT NULL COMMENT '直播间ID',
-  `user_id` bigint NOT NULL COMMENT '主播用户ID',
-  `title` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '回放标题',
-  `cover_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '封面URL',
-  `play_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '回放点播地址',
-  `duration_sec` int NULL DEFAULT NULL COMMENT '时长(秒)',
-  `status` tinyint NOT NULL DEFAULT 1 COMMENT '1可用 0转码中 -1删除',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `live_room_id` bigint NOT NULL COMMENT '鐩存挱闂碔D',
+  `user_id` bigint NOT NULL COMMENT '涓绘挱鐢ㄦ埛ID',
+  `title` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '鍥炴斁鏍囬',
+  `cover_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '灏侀潰URL',
+  `play_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '鍥炴斁鐐规挱鍦板潃',
+  `duration_sec` int NULL DEFAULT NULL COMMENT '鏃堕暱(绉?',
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT '1鍙敤 0杞爜涓?-1鍒犻櫎',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_user`(`user_id` ASC) USING BTREE,
   INDEX `idx_room`(`live_room_id` ASC) USING BTREE,
   INDEX `idx_create_time`(`create_time` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '直播回放' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鐩存挱鍥炴斁' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for live_room
 -- ----------------------------
 DROP TABLE IF EXISTS `live_room`;
 CREATE TABLE `live_room`  (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '直播间ID',
-  `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '直播标题',
-  `cover_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '封面URL',
-  `user_id` bigint NOT NULL COMMENT '主播用户ID',
-  `category_id` int NOT NULL COMMENT '分类ID',
-  `status` tinyint NOT NULL DEFAULT 0 COMMENT '状态：0-未开播，1-直播中，2-已结束',
-  `view_count` int NOT NULL DEFAULT 0 COMMENT '观看人数',
-  `start_time` datetime NULL DEFAULT NULL COMMENT '开始时间',
-  `end_time` datetime NULL DEFAULT NULL COMMENT '结束时间',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `stream_key` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '推流密钥',
-  `play_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT 'HTTP-FLV 拉流地址',
-  `push_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT 'RTMP 推流地址',
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '鐩存挱闂碔D',
+  `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '鐩存挱鏍囬',
+  `cover_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '灏侀潰URL',
+  `user_id` bigint NOT NULL COMMENT '涓绘挱鐢ㄦ埛ID',
+  `category_id` int NOT NULL COMMENT '鍒嗙被ID',
+  `status` tinyint NOT NULL DEFAULT 0 COMMENT '鐘舵€侊細0-鏈紑鎾紝1-鐩存挱涓紝2-宸茬粨鏉?,
+  `view_count` int NOT NULL DEFAULT 0 COMMENT '瑙傜湅浜烘暟',
+  `start_time` datetime NULL DEFAULT NULL COMMENT '寮€濮嬫椂闂?,
+  `end_time` datetime NULL DEFAULT NULL COMMENT '缁撴潫鏃堕棿',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '鏇存柊鏃堕棿',
+  `stream_key` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '鎺ㄦ祦瀵嗛挜',
+  `play_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT 'HTTP-FLV 鎷夋祦鍦板潃',
+  `push_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT 'RTMP 鎺ㄦ祦鍦板潃',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_stream_key`(`stream_key` ASC) USING BTREE,
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
   INDEX `idx_category_id`(`category_id` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '直播间表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鐩存挱闂磋〃' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for live_user
@@ -396,14 +396,14 @@ CREATE TABLE `live_room`  (
 DROP TABLE IF EXISTS `live_user`;
 CREATE TABLE `live_user`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `live_room_id` bigint NOT NULL COMMENT '直播间ID',
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `enter_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '进入时间',
-  `leave_time` datetime NULL DEFAULT NULL COMMENT '离开时间',
+  `live_room_id` bigint NOT NULL COMMENT '鐩存挱闂碔D',
+  `user_id` bigint NOT NULL COMMENT '鐢ㄦ埛ID',
+  `enter_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '杩涘叆鏃堕棿',
+  `leave_time` datetime NULL DEFAULT NULL COMMENT '绂诲紑鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_live_user`(`live_room_id` ASC, `user_id` ASC) USING BTREE,
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 19 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '直播观众表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 19 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鐩存挱瑙備紬琛? ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for notification
@@ -411,18 +411,18 @@ CREATE TABLE `live_user`  (
 DROP TABLE IF EXISTS `notification`;
 CREATE TABLE `notification`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `user_id` bigint NOT NULL COMMENT '接收者',
-  `type` tinyint NOT NULL COMMENT '1评论 2回复 3关注 4审核 5直播开播 6系统',
-  `title` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '标题',
-  `content` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '内容',
+  `user_id` bigint NOT NULL COMMENT '鎺ユ敹鑰?,
+  `type` tinyint NOT NULL COMMENT '1璇勮 2鍥炲 3鍏虫敞 4瀹℃牳 5鐩存挱寮€鎾?6绯荤粺',
+  `title` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '鏍囬',
+  `content` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '鍐呭',
   `biz_type` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT 'video|comment|live|system',
-  `biz_id` bigint NULL DEFAULT NULL COMMENT '关联业务ID',
-  `from_user_id` bigint NULL DEFAULT NULL COMMENT '触发者',
-  `is_read` tinyint NOT NULL DEFAULT 0 COMMENT '0未读 1已读',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `biz_id` bigint NULL DEFAULT NULL COMMENT '鍏宠仈涓氬姟ID',
+  `from_user_id` bigint NULL DEFAULT NULL COMMENT '瑙﹀彂鑰?,
+  `is_read` tinyint NOT NULL DEFAULT 0 COMMENT '0鏈 1宸茶',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_user_read`(`user_id` ASC, `is_read` ASC, `create_time` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '站内通知' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '绔欏唴閫氱煡' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for play_history
@@ -430,16 +430,16 @@ CREATE TABLE `notification`  (
 DROP TABLE IF EXISTS `play_history`;
 CREATE TABLE `play_history`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `video_id` bigint NOT NULL COMMENT '视频ID',
-  `progress_sec` int NOT NULL DEFAULT 0 COMMENT '播放进度(秒)',
-  `duration_sec` int NOT NULL DEFAULT 0 COMMENT '视频总时长(秒)',
-  `last_play_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '最后播放时间',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `user_id` bigint NOT NULL COMMENT '鐢ㄦ埛ID',
+  `video_id` bigint NOT NULL COMMENT '瑙嗛ID',
+  `progress_sec` int NOT NULL DEFAULT 0 COMMENT '鎾斁杩涘害(绉?',
+  `duration_sec` int NOT NULL DEFAULT 0 COMMENT '瑙嗛鎬绘椂闀?绉?',
+  `last_play_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鏈€鍚庢挱鏀炬椂闂?,
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_user_video`(`user_id` ASC, `video_id` ASC) USING BTREE,
   INDEX `idx_user_time`(`user_id` ASC, `last_play_time` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 17 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '播放历史' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 17 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鎾斁鍘嗗彶' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for recharge_order
@@ -447,20 +447,20 @@ CREATE TABLE `play_history`  (
 DROP TABLE IF EXISTS `recharge_order`;
 CREATE TABLE `recharge_order`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `order_no` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '业务订单号',
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `amount` bigint NOT NULL COMMENT '硬币数量',
-  `pay_amount` decimal(10, 2) NOT NULL COMMENT '应付金额',
-  `status` tinyint NOT NULL DEFAULT 0 COMMENT '0待支付 1已支付 2已取消',
+  `order_no` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '涓氬姟璁㈠崟鍙?,
+  `user_id` bigint NOT NULL COMMENT '鐢ㄦ埛ID',
+  `amount` bigint NOT NULL COMMENT '纭竵鏁伴噺',
+  `pay_amount` decimal(10, 2) NOT NULL COMMENT '搴斾粯閲戦',
+  `status` tinyint NOT NULL DEFAULT 0 COMMENT '0寰呮敮浠?1宸叉敮浠?2宸插彇娑?,
   `pay_channel` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT 'mock|alipay|wechat',
-  `paid_time` datetime NULL DEFAULT NULL COMMENT '支付时间',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `paid_time` datetime NULL DEFAULT NULL COMMENT '鏀粯鏃堕棿',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '鏇存柊鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_order_no`(`order_no` ASC) USING BTREE,
   INDEX `idx_user_status`(`user_id` ASC, `status` ASC) USING BTREE,
   INDEX `idx_create_time`(`create_time` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '充值订单' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鍏呭€艰鍗? ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for report
@@ -468,56 +468,56 @@ CREATE TABLE `recharge_order`  (
 DROP TABLE IF EXISTS `report`;
 CREATE TABLE `report`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `reporter_id` bigint NOT NULL COMMENT '举报人',
-  `target_type` tinyint NOT NULL COMMENT '1视频 2评论 3弹幕 4用户 5直播间',
-  `target_id` bigint NOT NULL COMMENT '目标ID',
-  `reason` tinyint NOT NULL COMMENT '1违法 2色情 3辱骂 4广告 5其他',
-  `detail` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '补充说明',
-  `status` tinyint NOT NULL DEFAULT 0 COMMENT '0待处理 1已处理 2已驳回',
-  `handler_id` bigint NULL DEFAULT NULL COMMENT '处理管理员ID',
-  `handle_remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '处理备注',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `handle_time` datetime NULL DEFAULT NULL COMMENT '处理时间',
+  `reporter_id` bigint NOT NULL COMMENT '涓炬姤浜?,
+  `target_type` tinyint NOT NULL COMMENT '1瑙嗛 2璇勮 3寮瑰箷 4鐢ㄦ埛 5鐩存挱闂?,
+  `target_id` bigint NOT NULL COMMENT '鐩爣ID',
+  `reason` tinyint NOT NULL COMMENT '1杩濇硶 2鑹叉儏 3杈遍獋 4骞垮憡 5鍏朵粬',
+  `detail` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '琛ュ厖璇存槑',
+  `status` tinyint NOT NULL DEFAULT 0 COMMENT '0寰呭鐞?1宸插鐞?2宸查┏鍥?,
+  `handler_id` bigint NULL DEFAULT NULL COMMENT '澶勭悊绠＄悊鍛業D',
+  `handle_remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '澶勭悊澶囨敞',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
+  `handle_time` datetime NULL DEFAULT NULL COMMENT '澶勭悊鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_status`(`status` ASC, `create_time` ASC) USING BTREE,
   INDEX `idx_target`(`target_type` ASC, `target_id` ASC) USING BTREE,
   INDEX `idx_reporter`(`reporter_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '举报' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '涓炬姤' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for tag
 -- ----------------------------
 DROP TABLE IF EXISTS `tag`;
 CREATE TABLE `tag`  (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '标签ID',
-  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '标签名称',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '鏍囩ID',
+  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '鏍囩鍚嶇О',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `idx_name`(`name` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '标签表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鏍囩琛? ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for user
 -- ----------------------------
 DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user`  (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '用户ID',
-  `username` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '用户名',
-  `password` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '加密密码',
-  `email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '邮箱',
-  `phone` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '手机号',
-  `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '头像URL',
-  `nickname` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '昵称',
-  `signature` varchar(255) CHARACTER SET utf16le COLLATE utf16le_general_ci NULL DEFAULT NULL COMMENT '个性签名',
-  `role` tinyint NOT NULL DEFAULT 0 COMMENT '角色：0-普通用户，1-UP主，2-管理员',
-  `status` tinyint NOT NULL DEFAULT 1 COMMENT '状态：0-禁用，1-正常',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '鐢ㄦ埛ID',
+  `username` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '鐢ㄦ埛鍚?,
+  `password` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '鍔犲瘑瀵嗙爜',
+  `email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '閭',
+  `phone` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '鎵嬫満鍙?,
+  `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '澶村儚URL',
+  `nickname` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '鏄电О',
+  `signature` varchar(255) CHARACTER SET utf16le COLLATE utf16le_general_ci NULL DEFAULT NULL COMMENT '涓€х鍚?,
+  `role` tinyint NOT NULL DEFAULT 0 COMMENT '瑙掕壊锛?-鏅€氱敤鎴凤紝1-UP涓伙紝2-绠＄悊鍛?,
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT '鐘舵€侊細0-绂佺敤锛?-姝ｅ父',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '鏇存柊鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `idx_username`(`username` ASC) USING BTREE,
   INDEX `idx_email`(`email` ASC) USING BTREE,
   INDEX `idx_phone`(`phone` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鐢ㄦ埛琛? ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for user_anime_follow
@@ -525,15 +525,15 @@ CREATE TABLE `user`  (
 DROP TABLE IF EXISTS `user_anime_follow`;
 CREATE TABLE `user_anime_follow`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `anime_id` bigint NOT NULL COMMENT '番剧ID',
-  `latest_episode` int NOT NULL DEFAULT 0 COMMENT '最新观看集数',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '追番时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `user_id` bigint NOT NULL COMMENT '鐢ㄦ埛ID',
+  `anime_id` bigint NOT NULL COMMENT '鐣墽ID',
+  `latest_episode` int NOT NULL DEFAULT 0 COMMENT '鏈€鏂拌鐪嬮泦鏁?,
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '杩界暘鏃堕棿',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '鏇存柊鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `idx_user_anime`(`user_id` ASC, `anime_id` ASC) USING BTREE,
   INDEX `idx_anime_id`(`anime_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户追番表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鐢ㄦ埛杩界暘琛? ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for user_follow
@@ -541,13 +541,13 @@ CREATE TABLE `user_anime_follow`  (
 DROP TABLE IF EXISTS `user_follow`;
 CREATE TABLE `user_follow`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `follow_user_id` bigint NOT NULL COMMENT '被关注用户ID',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '关注时间',
+  `user_id` bigint NOT NULL COMMENT '鐢ㄦ埛ID',
+  `follow_user_id` bigint NOT NULL COMMENT '琚叧娉ㄧ敤鎴稩D',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍏虫敞鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `idx_user_follow`(`user_id` ASC, `follow_user_id` ASC) USING BTREE,
   INDEX `idx_follow_user`(`follow_user_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户关注表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鐢ㄦ埛鍏虫敞琛? ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for user_like
@@ -555,14 +555,14 @@ CREATE TABLE `user_follow`  (
 DROP TABLE IF EXISTS `user_like`;
 CREATE TABLE `user_like`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `target_id` bigint NOT NULL COMMENT '目标ID',
-  `target_type` tinyint NOT NULL COMMENT '目标类型：1-视频，2-评论',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '点赞时间',
+  `user_id` bigint NOT NULL COMMENT '鐢ㄦ埛ID',
+  `target_id` bigint NOT NULL COMMENT '鐩爣ID',
+  `target_type` tinyint NOT NULL COMMENT '鐩爣绫诲瀷锛?-瑙嗛锛?-璇勮',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鐐硅禐鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `idx_user_target`(`user_id` ASC, `target_id` ASC, `target_type` ASC) USING BTREE,
   INDEX `idx_target`(`target_id` ASC, `target_type` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户点赞表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鐢ㄦ埛鐐硅禐琛? ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for user_settings
@@ -570,14 +570,14 @@ CREATE TABLE `user_like`  (
 DROP TABLE IF EXISTS `user_settings`;
 CREATE TABLE `user_settings`  (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `settings_json` json NOT NULL COMMENT '偏好配置 JSON',
+  `user_id` bigint NOT NULL COMMENT '鐢ㄦ埛ID',
+  `settings_json` json NOT NULL COMMENT '鍋忓ソ閰嶇疆 JSON',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_user_settings_user`(`user_id` ASC) USING BTREE,
   CONSTRAINT `fk_user_settings_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '用户偏好设置' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '鐢ㄦ埛鍋忓ソ璁剧疆' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for user_statistics
@@ -585,16 +585,16 @@ CREATE TABLE `user_settings`  (
 DROP TABLE IF EXISTS `user_statistics`;
 CREATE TABLE `user_statistics`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `follower_count` int NOT NULL DEFAULT 0 COMMENT '粉丝数',
-  `following_count` int NOT NULL DEFAULT 0 COMMENT '关注数',
-  `video_count` int NOT NULL DEFAULT 0 COMMENT '视频数',
-  `like_count` int NOT NULL DEFAULT 0 COMMENT '获赞数',
-  `view_count` int NOT NULL DEFAULT 0 COMMENT '总播放量',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `user_id` bigint NOT NULL COMMENT '鐢ㄦ埛ID',
+  `follower_count` int NOT NULL DEFAULT 0 COMMENT '绮変笣鏁?,
+  `following_count` int NOT NULL DEFAULT 0 COMMENT '鍏虫敞鏁?,
+  `video_count` int NOT NULL DEFAULT 0 COMMENT '瑙嗛鏁?,
+  `like_count` int NOT NULL DEFAULT 0 COMMENT '鑾疯禐鏁?,
+  `view_count` int NOT NULL DEFAULT 0 COMMENT '鎬绘挱鏀鹃噺',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '鏇存柊鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `idx_user_id`(`user_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户统计信息表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鐢ㄦ埛缁熻淇℃伅琛? ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for user_wallet
@@ -606,35 +606,37 @@ CREATE TABLE `user_wallet`  (
   `version` int NOT NULL DEFAULT 0,
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`user_id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户钱包（硬币）' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鐢ㄦ埛閽卞寘锛堢‖甯侊級' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for video
 -- ----------------------------
 DROP TABLE IF EXISTS `video`;
 CREATE TABLE `video`  (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '视频ID',
-  `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '视频标题',
-  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '视频描述',
-  `cover_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '封面URL',
-  `video_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '视频URL',
-  `duration` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '视频时长',
-  `user_id` bigint NOT NULL COMMENT '上传用户ID',
-  `category_id` int NOT NULL COMMENT '分类ID',
-  `status` tinyint NOT NULL DEFAULT 0 COMMENT '状态：0-待审核，1-正常，2-下架',
-  `view_count` int NOT NULL DEFAULT 0 COMMENT '播放量',
-  `like_count` int NOT NULL DEFAULT 0 COMMENT '点赞数',
-  `comment_count` int NOT NULL DEFAULT 0 COMMENT '评论数',
-  `share_count` int NOT NULL DEFAULT 0 COMMENT '分享数',
-  `reject_reason` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '审核不通过原因',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '瑙嗛ID',
+  `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '瑙嗛鏍囬',
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '瑙嗛鎻忚堪',
+  `cover_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '灏侀潰URL',
+  `video_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '瑙嗛URL',
+  `duration` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '瑙嗛鏃堕暱',
+  `user_id` bigint NOT NULL COMMENT '涓婁紶鐢ㄦ埛ID',
+  `category_id` int NOT NULL COMMENT '鍒嗙被ID',
+  `is_original` tinyint NOT NULL DEFAULT 1 COMMENT '1鍘熷垱 0杞浇锛堟帹鑽愮壒寰侊級',
+  `duration_sec` int NULL DEFAULT NULL COMMENT '鏃堕暱绉掞紙鏁板€硷紝鎺ㄨ崘鐢級',
+  `status` tinyint NOT NULL DEFAULT 0 COMMENT '鐘舵€侊細0-寰呭鏍革紝1-姝ｅ父锛?-涓嬫灦',
+  `view_count` int NOT NULL DEFAULT 0 COMMENT '鎾斁閲?,
+  `like_count` int NOT NULL DEFAULT 0 COMMENT '鐐硅禐鏁?,
+  `comment_count` int NOT NULL DEFAULT 0 COMMENT '璇勮鏁?,
+  `share_count` int NOT NULL DEFAULT 0 COMMENT '鍒嗕韩鏁?,
+  `reject_reason` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '瀹℃牳涓嶉€氳繃鍘熷洜',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '鏇存柊鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
   INDEX `idx_category_id`(`category_id` ASC) USING BTREE,
   INDEX `idx_create_time`(`create_time` ASC) USING BTREE,
   INDEX `idx_view_count`(`view_count` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 52 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '视频表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 52 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '瑙嗛琛? ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for video_favorite
@@ -642,15 +644,15 @@ CREATE TABLE `video`  (
 DROP TABLE IF EXISTS `video_favorite`;
 CREATE TABLE `video_favorite`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `video_id` bigint NOT NULL COMMENT '视频ID',
-  `folder_id` bigint NULL DEFAULT NULL COMMENT '收藏夹ID',
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
+  `video_id` bigint NOT NULL COMMENT '瑙嗛ID',
+  `folder_id` bigint NULL DEFAULT NULL COMMENT '鏀惰棌澶笽D',
+  `user_id` bigint NOT NULL COMMENT '鐢ㄦ埛ID',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鏀惰棌鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_video_user`(`video_id` ASC, `user_id` ASC) USING BTREE,
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
   INDEX `idx_folder`(`folder_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '视频收藏表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '瑙嗛鏀惰棌琛? ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for video_tag
@@ -658,12 +660,12 @@ CREATE TABLE `video_favorite`  (
 DROP TABLE IF EXISTS `video_tag`;
 CREATE TABLE `video_tag`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `video_id` bigint NOT NULL COMMENT '视频ID',
-  `tag_id` bigint NOT NULL COMMENT '标签ID',
+  `video_id` bigint NOT NULL COMMENT '瑙嗛ID',
+  `tag_id` bigint NOT NULL COMMENT '鏍囩ID',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `idx_video_tag`(`video_id` ASC, `tag_id` ASC) USING BTREE,
   INDEX `idx_tag_id`(`tag_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '视频标签关联表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '瑙嗛鏍囩鍏宠仈琛? ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for wallet_transaction
@@ -671,135 +673,163 @@ CREATE TABLE `video_tag`  (
 DROP TABLE IF EXISTS `wallet_transaction`;
 CREATE TABLE `wallet_transaction`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `type` tinyint NOT NULL COMMENT '1充值 2送礼支出 3主播收入 4系统调整',
-  `amount` bigint NOT NULL COMMENT '变动金额，正为入账，负为出账',
-  `balance_after` bigint NOT NULL COMMENT '变动后余额，口径见 biz_type',
+  `user_id` bigint NOT NULL COMMENT '鐢ㄦ埛ID',
+  `type` tinyint NOT NULL COMMENT '1鍏呭€?2閫佺ぜ鏀嚭 3涓绘挱鏀跺叆 4绯荤粺璋冩暣',
+  `amount` bigint NOT NULL COMMENT '鍙樺姩閲戦锛屾涓哄叆璐︼紝璐熶负鍑鸿处',
+  `balance_after` bigint NOT NULL COMMENT '鍙樺姩鍚庝綑棰濓紝鍙ｅ緞瑙?biz_type',
   `biz_type` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT 'recharge|gift|host_income|adjust',
-  `biz_id` bigint NULL DEFAULT NULL COMMENT '关联业务ID：充值订单ID / 打赏流水ID',
-  `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '备注',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `biz_id` bigint NULL DEFAULT NULL COMMENT '鍏宠仈涓氬姟ID锛氬厖鍊艰鍗旾D / 鎵撹祻娴佹按ID',
+  `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '澶囨敞',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_user_time`(`user_id` ASC, `create_time` ASC) USING BTREE,
   INDEX `idx_biz`(`biz_type` ASC, `biz_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '钱包账变流水' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '閽卞寘璐﹀彉娴佹按' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
--- Table structure for sensitive_word （阶段1 内容治理：敏感词库）
--- level: 1拦截 2转人工(标记后放行) 3仅标记
+-- Table structure for sensitive_word 锛堥樁娈? 鍐呭娌荤悊锛氭晱鎰熻瘝搴擄級
+-- level: 1鎷︽埅 2杞汉宸?鏍囪鍚庢斁琛? 3浠呮爣璁?
 -- ----------------------------
 DROP TABLE IF EXISTS `sensitive_word`;
 CREATE TABLE `sensitive_word`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `word` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '敏感词',
-  `level` tinyint NOT NULL DEFAULT 1 COMMENT '1拦截 2转人工 3仅标记',
-  `status` tinyint NOT NULL DEFAULT 1 COMMENT '1启用 0停用',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `word` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '鏁忔劅璇?,
+  `level` tinyint NOT NULL DEFAULT 1 COMMENT '1鎷︽埅 2杞汉宸?3浠呮爣璁?,
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT '1鍚敤 0鍋滅敤',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_word`(`word` ASC) USING BTREE,
   INDEX `idx_status_level`(`status` ASC, `level` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '敏感词库' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鏁忔劅璇嶅簱' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
--- Table structure for sensitive_hit_log （敏感词命中记录，用于误伤率复核）
--- review_status: 0待复核 1确认违规 2误伤
+-- Table structure for sensitive_hit_log 锛堟晱鎰熻瘝鍛戒腑璁板綍锛岀敤浜庤浼ょ巼澶嶆牳锛?
+-- review_status: 0寰呭鏍?1纭杩濊 2璇激
 -- ----------------------------
 DROP TABLE IF EXISTS `sensitive_hit_log`;
 CREATE TABLE `sensitive_hit_log`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `word_id` bigint NULL DEFAULT NULL COMMENT '敏感词ID',
-  `word` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '命中词',
-  `level` tinyint NOT NULL DEFAULT 1 COMMENT '命中时的级别',
-  `user_id` bigint NULL DEFAULT NULL COMMENT '发布者',
+  `word_id` bigint NULL DEFAULT NULL COMMENT '鏁忔劅璇岻D',
+  `word` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '鍛戒腑璇?,
+  `level` tinyint NOT NULL DEFAULT 1 COMMENT '鍛戒腑鏃剁殑绾у埆',
+  `user_id` bigint NULL DEFAULT NULL COMMENT '鍙戝竷鑰?,
   `target_type` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT 'video|comment|danmaku|dynamic',
-  `target_id` bigint NULL DEFAULT NULL COMMENT '目标ID',
-  `content` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '命中片段',
+  `target_id` bigint NULL DEFAULT NULL COMMENT '鐩爣ID',
+  `content` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '鍛戒腑鐗囨',
   `action` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT 'block|mark',
-  `review_status` tinyint NOT NULL DEFAULT 0 COMMENT '0待复核 1确认违规 2误伤',
-  `review_admin_id` bigint NULL DEFAULT NULL COMMENT '复核管理员',
-  `review_time` datetime NULL DEFAULT NULL COMMENT '复核时间',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `review_status` tinyint NOT NULL DEFAULT 0 COMMENT '0寰呭鏍?1纭杩濊 2璇激',
+  `review_admin_id` bigint NULL DEFAULT NULL COMMENT '澶嶆牳绠＄悊鍛?,
+  `review_time` datetime NULL DEFAULT NULL COMMENT '澶嶆牳鏃堕棿',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_user_time`(`user_id` ASC, `create_time` ASC) USING BTREE,
   INDEX `idx_target`(`target_type` ASC, `target_id` ASC) USING BTREE,
   INDEX `idx_review`(`review_status` ASC, `create_time` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '敏感词命中记录' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鏁忔劅璇嶅懡涓褰? ROW_FORMAT = Dynamic;
 
 -- ----------------------------
--- Table structure for user_credit （用户信用分）
--- 初始 100 分；举报成立 -10，敏感词拦截 -5，审核驳回 -3，投稿通过 +2
+-- Table structure for user_credit 锛堢敤鎴蜂俊鐢ㄥ垎锛?
+-- 鍒濆 100 鍒嗭紱涓炬姤鎴愮珛 -10锛屾晱鎰熻瘝鎷︽埅 -5锛屽鏍搁┏鍥?-3锛屾姇绋块€氳繃 +2
 -- ----------------------------
 DROP TABLE IF EXISTS `user_credit`;
 CREATE TABLE `user_credit`  (
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `score` int NOT NULL DEFAULT 100 COMMENT '信用分',
-  `violation_count` int NOT NULL DEFAULT 0 COMMENT '违规次数',
-  `last_violation_time` datetime NULL DEFAULT NULL COMMENT '最近违规时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `user_id` bigint NOT NULL COMMENT '鐢ㄦ埛ID',
+  `score` int NOT NULL DEFAULT 100 COMMENT '淇＄敤鍒?,
+  `violation_count` int NOT NULL DEFAULT 0 COMMENT '杩濊娆℃暟',
+  `last_violation_time` datetime NULL DEFAULT NULL COMMENT '鏈€杩戣繚瑙勬椂闂?,
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '鏇存柊鏃堕棿',
   PRIMARY KEY (`user_id`) USING BTREE,
   INDEX `idx_score`(`score` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户信用分' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鐢ㄦ埛淇＄敤鍒? ROW_FORMAT = Dynamic;
 
 -- ----------------------------
--- Table structure for user_penalty （处置记录，支持时限）
--- action: mute 禁言 / ban 封禁；end_time NULL 表示永久
+-- Table structure for user_penalty 锛堝缃褰曪紝鏀寔鏃堕檺锛?
+-- action: mute 绂佽█ / ban 灏佺锛沞nd_time NULL 琛ㄧず姘镐箙
 -- ----------------------------
 DROP TABLE IF EXISTS `user_penalty`;
 CREATE TABLE `user_penalty`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `user_id` bigint NOT NULL COMMENT '被处置用户',
+  `user_id` bigint NOT NULL COMMENT '琚缃敤鎴?,
   `action` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT 'mute|ban',
-  `reason` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '原因',
-  `start_time` datetime NOT NULL COMMENT '开始时间',
-  `end_time` datetime NULL DEFAULT NULL COMMENT '到期时间，NULL=永久',
-  `admin_id` bigint NULL DEFAULT NULL COMMENT '操作管理员',
-  `status` tinyint NOT NULL DEFAULT 1 COMMENT '1生效中 2已到期 3已提前解除',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `reason` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '鍘熷洜',
+  `start_time` datetime NOT NULL COMMENT '寮€濮嬫椂闂?,
+  `end_time` datetime NULL DEFAULT NULL COMMENT '鍒版湡鏃堕棿锛孨ULL=姘镐箙',
+  `admin_id` bigint NULL DEFAULT NULL COMMENT '鎿嶄綔绠＄悊鍛?,
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT '1鐢熸晥涓?2宸插埌鏈?3宸叉彁鍓嶈В闄?,
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_user_status`(`user_id` ASC, `status` ASC) USING BTREE,
   INDEX `idx_expiry`(`status` ASC, `end_time` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户处置记录' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '鐢ㄦ埛澶勭疆璁板綍' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
--- Table structure for event_log （阶段0 统一行为流水：推荐特征/治理报表/协同实验的共同原料）
--- 违规曝光率 = 窗口内 video_view 中 target 命中违规视频集合的占比
--- extra 存 JSON 文本（分类ID、礼物金额、举报原因等扩展），用 VARCHAR 避免类型处理器开销
+-- Table structure for event_log 锛堥樁娈? 缁熶竴琛屼负娴佹按锛氭帹鑽愮壒寰?娌荤悊鎶ヨ〃/鍗忓悓瀹為獙鐨勫叡鍚屽師鏂欙級
+-- 杩濊鏇濆厜鐜?= 绐楀彛鍐?video_view 涓?target 鍛戒腑杩濊瑙嗛闆嗗悎鐨勫崰姣?
+-- extra 瀛?JSON 鏂囨湰锛堝垎绫籌D銆佺ぜ鐗╅噾棰濄€佷妇鎶ュ師鍥犵瓑鎵╁睍锛夛紝鐢?VARCHAR 閬垮厤绫诲瀷澶勭悊鍣ㄥ紑閿€
 -- ----------------------------
 DROP TABLE IF EXISTS `event_log`;
 CREATE TABLE `event_log`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `user_id` bigint NULL DEFAULT NULL COMMENT '用户ID，未登录为 NULL',
+  `user_id` bigint NULL DEFAULT NULL COMMENT '鐢ㄦ埛ID锛屾湭鐧诲綍涓?NULL',
   `event_type` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT 'video_view|video_like|video_favorite|comment|danmaku|follow|gift_send|live_enter|live_watch|report|audit_pass|...',
   `target_type` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT 'video|user|comment|live_room|gift|dynamic',
-  `target_id` bigint NULL DEFAULT NULL COMMENT '目标ID',
-  `duration_sec` int NULL DEFAULT NULL COMMENT '观看/直播时长(秒)',
-  `extra` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT 'JSON 文本扩展',
+  `target_id` bigint NULL DEFAULT NULL COMMENT '鐩爣ID',
+  `duration_sec` int NULL DEFAULT NULL COMMENT '瑙傜湅/鐩存挱鏃堕暱(绉?',
+  `extra` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT 'JSON 鏂囨湰鎵╁睍',
   `source` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT 'web|admin|system',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_user_time`(`user_id` ASC, `create_time` ASC) USING BTREE,
   INDEX `idx_type_target`(`event_type` ASC, `target_type` ASC, `target_id` ASC) USING BTREE,
   INDEX `idx_time`(`create_time` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '统一行为流水' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '缁熶竴琛屼负娴佹按' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
--- Table structure for admin_operation_log （阶段0 操作日志：管理端可追溯）
--- action 形如 video.approve|user.ban|report.handle|sensitive.create
+-- Table structure for admin_operation_log 锛堥樁娈? 鎿嶄綔鏃ュ織锛氱鐞嗙鍙拷婧級
+-- action 褰㈠ video.approve|user.ban|report.handle|sensitive.create
 -- ----------------------------
 DROP TABLE IF EXISTS `admin_operation_log`;
 CREATE TABLE `admin_operation_log`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `admin_id` bigint NULL DEFAULT NULL COMMENT '操作管理员，系统自动动作为 NULL',
+  `admin_id` bigint NULL DEFAULT NULL COMMENT '鎿嶄綔绠＄悊鍛橈紝绯荤粺鑷姩鍔ㄤ綔涓?NULL',
   `action` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT 'video.approve|user.ban|report.handle|...',
   `target_type` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT 'video|user|report|gift|live_room|sensitive_word',
-  `target_id` bigint NULL DEFAULT NULL COMMENT '目标ID',
-  `detail` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '补充说明',
-  `ip` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '操作来源 IP',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `target_id` bigint NULL DEFAULT NULL COMMENT '鐩爣ID',
+  `detail` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '琛ュ厖璇存槑',
+  `ip` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '鎿嶄綔鏉ユ簮 IP',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_admin_time`(`admin_id` ASC, `create_time` ASC) USING BTREE,
   INDEX `idx_action`(`action` ASC) USING BTREE,
   INDEX `idx_target`(`target_type` ASC, `target_id` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '管理端操作日志' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '绠＄悊绔搷浣滄棩蹇? ROW_FORMAT = Dynamic;
+-- ----------------------------
+-- Table structure for video_feature (recommend pool / hot score)
+-- enter pool on audit pass, leave on offline; hot_score refreshed periodically
+-- ----------------------------
+DROP TABLE IF EXISTS `video_feature`;
+CREATE TABLE `video_feature` (
+  `video_id` bigint NOT NULL COMMENT 'video id',
+  `duration_sec` int NULL DEFAULT NULL COMMENT 'duration seconds',
+  `is_original` tinyint NOT NULL DEFAULT 1 COMMENT '1 original 0 reprint',
+  `hot_score` double NOT NULL DEFAULT 0 COMMENT 'hot score',
+  `pool_status` tinyint NOT NULL DEFAULT 1 COMMENT '1 in pool 0 out',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
+  PRIMARY KEY (`video_id`) USING BTREE,
+  KEY `idx_pool_hot` (`pool_status`, `hot_score`)
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci
+  COMMENT = 'video recommend feature pool' ROW_FORMAT = Dynamic;
+
+INSERT INTO `video_feature` (`video_id`, `duration_sec`, `is_original`, `hot_score`, `pool_status`)
+SELECT v.id,
+       v.duration_sec,
+       IFNULL(v.is_original, 1),
+       v.view_count + v.like_count * 3 + v.comment_count * 4 + v.share_count * 2,
+       1
+FROM `video` v
+WHERE v.status = 1
+ON DUPLICATE KEY UPDATE `pool_status` = 1,
+                        `duration_sec` = VALUES(`duration_sec`),
+                        `is_original` = VALUES(`is_original`);
 
 SET FOREIGN_KEY_CHECKS = 1;
