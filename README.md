@@ -1,4 +1,4 @@
-# NexusPlay
+<img width="1920" height="1031" alt="image" src="https://github.com/user-attachments/assets/e3211d60-70fe-40b1-9a59-8709abc3fbf2" /># NexusPlay
 
 B 站风格的视频社区：投稿与弹幕播放、评论关注、站内通知、直播礼物与 PK、钱包账变、内容举报治理、热度推荐与热榜。
 
@@ -12,7 +12,8 @@ B 站风格的视频社区：投稿与弹幕播放、评论关注、站内通知
 | `bankend/BiliPlus/sql/biliplus.sql` | 数据库基线，44 张表，含推荐池与内容治理表 |
 
 ---
-![Uploading image.png…]()
+
+
 
 ## 功能
 
