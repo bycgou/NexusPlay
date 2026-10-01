@@ -6,6 +6,8 @@ import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import path from 'path'
 
 export default defineConfig({
+    // 部署在 https://www.nexusplay.website/admin/
+    base: '/admin/',
     plugins: [
         vue(),
         AutoImport({
