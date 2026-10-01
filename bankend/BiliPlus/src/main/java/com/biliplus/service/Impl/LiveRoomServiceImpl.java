@@ -238,11 +238,12 @@ public class LiveRoomServiceImpl implements LiveRoomService {
         int clients = 0;
         if (StringUtils.hasText(room.getStreamKey())) {
             try {
-                // SRS 5: GET /api/v1/streams 返回全部流
-                String apiUrl = String.format("http://%s:1985/api/v1/streams",
-                        liveProperties.getSrs().getRtmpHost());
+                // SRS 5: GET /api/v1/streams/ 返回全部流（注意结尾斜杠，否则 302）
+                String apiUrl = liveProperties.buildStreamsApiUrl();
                 java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
                         .connectTimeout(java.time.Duration.ofSeconds(2))
+                        // SRS 可能仍有跳转，跟随一次
+                        .followRedirects(java.net.http.HttpClient.Redirect.NORMAL)
                         .build();
                 java.net.http.HttpRequest req = java.net.http.HttpRequest.newBuilder()
                         .uri(java.net.URI.create(apiUrl))

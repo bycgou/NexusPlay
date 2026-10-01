@@ -18,7 +18,10 @@ public class LiveProperties {
     public static class Srs {
         private String rtmpHost = "localhost";
         private Integer rtmpPort = 1935;
+        /** SRS HTTP-FLV 基址，如 http://host:8080/live */
         private String httpFlvBase = "http://localhost:8080/live";
+        /** SRS HTTP-API 端口，用于查询推流状态 */
+        private Integer apiPort = 1985;
         private Boolean rtcEnabled = false;
     }
 
@@ -40,5 +43,15 @@ public class LiveProperties {
     /** SRS 默认 HTTP-FLV：/live/{streamKey}.flv（不要写成 .live.flv） */
     public String buildPlayUrl(String streamKey) {
         return String.format("%s/%s.flv", srs.getHttpFlvBase(), streamKey);
+    }
+
+    /**
+     * SRS HTTP-API：查询全部流。
+     * 注意结尾斜杠：SRS 5 对 /api/v1/streams 会返回 302 跳转到 /api/v1/streams/，
+     * 少了斜杠会导致状态判断拿不到 200。
+     */
+    public String buildStreamsApiUrl() {
+        return String.format("http://%s:%d/api/v1/streams/",
+                srs.getRtmpHost(), srs.getApiPort());
     }
 }
