@@ -211,6 +211,15 @@ public class PeopleUserServiceImpl implements PeopleUserService {
         video.setCoverUrl(videoUploadDTO.getCoverUrl());
         video.setVideoUrl(videoUploadDTO.getVideoUrl());
         video.setDuration(videoUploadDTO.getDuration());
+        // is_original NOT NULL：1 原创 / 0 转载；前端 type=original|reprint
+        String type = videoUploadDTO.getType();
+        boolean original = type == null
+                || "original".equalsIgnoreCase(type.trim())
+                || "原创".equals(type.trim())
+                || "1".equals(type.trim());
+        video.setIsOriginal(original ? 1 : 0);
+        // duration_sec 数值列，推荐/播放进度用；duration 仍存展示字符串
+        video.setDurationSec(parseDurationSec(videoUploadDTO.getDuration()));
         // 默认待审核，管理端通过后变为 1
         video.setStatus(0);
         video.setViewCount(0L);
@@ -227,6 +236,31 @@ public class PeopleUserServiceImpl implements PeopleUserService {
         replaceVideoTags(video.getId(), videoUploadDTO.getTags());
         log.info("投稿视频成功, videoId={}", video.getId());
         return video;
+    }
+
+    /** duration 字段可能是 "13"、"0:13"、"13.1秒" 等，统一解析为秒 */
+    private static Integer parseDurationSec(String duration) {
+        if (duration == null || duration.trim().isEmpty()) {
+            return 0;
+        }
+        String s = duration.trim();
+        try {
+            if (s.contains(":")) {
+                String[] parts = s.split(":");
+                int sec = 0;
+                for (String p : parts) {
+                    sec = sec * 60 + (int) Double.parseDouble(p.trim());
+                }
+                return sec;
+            }
+            String digits = s.replaceAll("[^0-9.]", "");
+            if (digits.isEmpty()) {
+                return 0;
+            }
+            return (int) Double.parseDouble(digits);
+        } catch (Exception e) {
+            return 0;
+        }
     }
 
     @Override
