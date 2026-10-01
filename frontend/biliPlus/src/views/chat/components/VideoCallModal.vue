@@ -194,6 +194,21 @@ interface WebRTCSignal {
   candidate?: RTCIceCandidateInit
 }
 
+/** 浏览器安全上下文检查：公网 HTTP 下 getUserMedia 会被直接拒绝 */
+const ensureMediaAvailable = (): boolean => {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    ElMessage.error('当前浏览器不支持音视频通话')
+    return false
+  }
+  if (!window.isSecureContext) {
+    ElMessage.error(
+        '视频通话需要 HTTPS 或 localhost。当前是 HTTP 公网访问，浏览器会禁止使用摄像头/麦克风'
+    )
+    return false
+  }
+  return true
+}
+
 const sendSignal = (signal: WebRTCSignal) => {
   const socket = chatSocket.value
   if (!socket || socket.readyState !== WebSocket.OPEN) {
@@ -213,8 +228,13 @@ const sendSignal = (signal: WebRTCSignal) => {
 
 // ========== 初始化 PeerConnection（通用） ==========
 const createPeerConnection = () => {
+  // 多 STUN：Google 在国内可能不通，补充国内常见 STUN
   const peerConnection = new RTCPeerConnection({
-    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    iceServers: [
+      { urls: 'stun:stun.miwifi.com:3478' },
+      { urls: 'stun:stun.chat.bilibili.com:3478' },
+      { urls: 'stun:stun.l.google.com:19302' }
+    ]
   })
 
   // 监听远端流
@@ -287,6 +307,10 @@ const switchCamera = async (device: MediaDeviceInfo) => {
 // ========== 主叫：发起通话 ==========
 const startOutgoingCall = async () => {
   if (isInitialized.value) return
+  if (!ensureMediaAvailable()) {
+    hangup()
+    return
+  }
   isInitialized.value = true
 
   const socket = chatSocket.value
@@ -365,6 +389,10 @@ const startOutgoingCall = async () => {
 // ========== 被叫：响应 offer ==========
 const startIncomingCall = async (offerSignal: WebRTCSignal) => {
   if (isInitialized.value || !offerSignal.sdp) return
+  if (!ensureMediaAvailable()) {
+    hangup()
+    return
+  }
   isInitialized.value = true
 
   const socket = chatSocket.value
@@ -474,6 +502,8 @@ const handleError = (err: Error) => {
     msg = '未检测到摄像头或麦克风'
   } else if (err.name === 'NotReadableError') {
     msg = '设备正被其他应用占用'
+  } else if (!window.isSecureContext) {
+    msg = 'HTTP 下无法使用摄像头，请用 HTTPS 或 localhost 访问'
   }
   ElMessage.error(msg)
 }
