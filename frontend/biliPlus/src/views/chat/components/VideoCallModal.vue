@@ -194,16 +194,17 @@ interface WebRTCSignal {
   candidate?: RTCIceCandidateInit
 }
 
-/** 浏览器安全上下文检查：公网 HTTP 下 getUserMedia 会被直接拒绝 */
+/** 浏览器安全上下文检查：公网 HTTP 下 navigator.mediaDevices 会是 undefined */
 const ensureMediaAvailable = (): boolean => {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    ElMessage.error('当前浏览器不支持音视频通话')
-    return false
-  }
+  // 必须先判断安全上下文：HTTP 下 mediaDevices 整个对象都不存在
   if (!window.isSecureContext) {
     ElMessage.error(
-        '视频通话需要 HTTPS 或 localhost。当前是 HTTP 公网访问，浏览器会禁止使用摄像头/麦克风'
+        `请使用 https://www.nexusplay.website 打开后再试视频通话（当前是 HTTP，浏览器禁止摄像头）`
     )
+    return false
+  }
+  if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+    ElMessage.error('当前浏览器不支持音视频通话，请改用 Chrome / Edge 桌面版，并确保不是微信内置浏览器')
     return false
   }
   return true
