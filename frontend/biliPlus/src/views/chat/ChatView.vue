@@ -174,7 +174,7 @@ const handleSocketMessage = (event) => {
       console.log('📡 收到 WebRTC 信令:', signal)
 
       if (signal.type === 'offer') {
-        // 被叫方：自动弹出视频窗口并初始化
+        // 被叫方：提示来电 + 响铃，用户点「接听」后才建立连接
         if (!isVideoCalling.value) {
           const targetConv = conversationList.value.find(
               c => c.id == data.conversationId
@@ -187,15 +187,14 @@ const handleSocketMessage = (event) => {
           }
           isVideoCalling.value = true
 
-          // nextTick 后立即接听，避免 300ms 窗口内丢掉 ICE
           nextTick(() => {
-            videoCallModalRef.value?.startIncomingCall(signal)
+            videoCallModalRef.value?.showIncomingCall(signal)
           })
         } else {
           videoCallModalRef.value?.handleIncomingSignal(signal)
         }
       } else {
-        // answer / candidate：PC 未建好时 modal 会缓存
+        // answer / candidate / reject / hangup
         videoCallModalRef.value?.handleIncomingSignal(signal)
       }
       return
