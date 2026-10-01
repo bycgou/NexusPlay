@@ -151,6 +151,9 @@ const hangup = () => {
   remoteStream.value = null
   muted.value = false
   cameraOff.value = false
+  isInitialized.value = false
+  pendingCandidates.length = 0
+  pendingRemoteOffer.value = null
   callStatus.value = '已挂断'
   visible.value = false
   emit('update:modelValue', false)
@@ -177,6 +180,23 @@ const remoteVideo = ref<HTMLVideoElement | null>(null)
 const localStream = ref<MediaStream | null>(null)
 const remoteStream = ref<MediaStream | null>(null)
 const pc = ref<RTCPeerConnection | null>(null)
+
+// ICE candidate 在 PC 就绪前到达时先缓存
+const pendingCandidates: RTCIceCandidateInit[] = []
+const pendingRemoteOffer = ref<{ type: string; sdp?: string; candidate?: RTCIceCandidateInit } | null>(null)
+
+const flushPendingCandidates = async () => {
+  if (!pc.value) return
+  const list = [...pendingCandidates]
+  pendingCandidates.length = 0
+  for (const c of list) {
+    try {
+      await pc.value.addIceCandidate(new RTCIceCandidate(c))
+    } catch (e) {
+      console.warn('addIceCandidate 失败:', e)
+    }
+  }
+}
 
 // 状态控制
 const muted = ref(false)
@@ -322,7 +342,10 @@ const startOutgoingCall = async () => {
   }
 
   try {
-    callStatus.value = '正在获取摄像头...'
+    callStatus.value = '正在呼叫...'
+    // 先建 PC，尽早接收 answer/candidate
+    const peerConnection = createPeerConnection()
+    pc.value = peerConnection
 
     // 🔍 获取所有摄像头
     await getVideoDevices()
@@ -369,10 +392,6 @@ const startOutgoingCall = async () => {
     if (localVideo.value) {
       localVideo.value.srcObject = stream
     }
-
-    // 🔗 创建 PeerConnection 并添加轨道
-    const peerConnection = createPeerConnection()
-    pc.value = peerConnection
     stream.getTracks().forEach(track => peerConnection.addTrack(track, stream))
 
     // 📤 发送 offer
@@ -380,6 +399,7 @@ const startOutgoingCall = async () => {
     const offer = await peerConnection.createOffer()
     await peerConnection.setLocalDescription(offer)
     sendSignal({ type: 'offer', sdp: offer.sdp })
+    await flushPendingCandidates()
 
   } catch (err: any) {
     handleError(err)
@@ -404,6 +424,14 @@ const startIncomingCall = async (offerSignal: WebRTCSignal) => {
   }
 
   try {
+    callStatus.value = '正在接通...'
+    // ⚠️ 先建 PC，再取媒体：否则早期 ICE candidate 会被丢掉
+    const peerConnection = createPeerConnection()
+    pc.value = peerConnection
+
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(offerSignal))
+    await flushPendingCandidates()
+
     callStatus.value = '正在获取摄像头...'
 
     // 🔍 获取所有摄像头
@@ -451,19 +479,13 @@ const startIncomingCall = async (offerSignal: WebRTCSignal) => {
     if (localVideo.value) {
       localVideo.value.srcObject = stream
     }
-
-    // 🔗 建立 PeerConnection
-    const peerConnection = createPeerConnection()
-    pc.value = peerConnection
     stream.getTracks().forEach(track => peerConnection.addTrack(track, stream))
-
-    // 📥 设置远端描述（offer）
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(offerSignal))
 
     // 📤 创建并发送 answer
     const answer = await peerConnection.createAnswer()
     await peerConnection.setLocalDescription(answer)
     sendSignal({ type: 'answer', sdp: answer.sdp })
+    await flushPendingCandidates()
 
     callStatus.value = '已接听...'
 
@@ -475,7 +497,22 @@ const startIncomingCall = async (offerSignal: WebRTCSignal) => {
 
 // ========== 处理后续信令（candidate / answer） ==========
 const handleIncomingSignal = (signal: WebRTCSignal) => {
+  // PC 尚未创建：缓存 candidate / offer，等 startIncomingCall 处理
   if (!pc.value) {
+    if (signal.type === 'candidate' && signal.candidate) {
+      pendingCandidates.push(signal.candidate)
+      console.log('📥 缓存 ICE candidate，等待 PeerConnection', pendingCandidates.length)
+      return
+    }
+    if (signal.type === 'offer' && signal.sdp) {
+      pendingRemoteOffer.value = signal
+      return
+    }
+    if (signal.type === 'answer' && signal.sdp) {
+      // 主叫方 answer 到达但 PC 异常，忽略
+      console.warn('PeerConnection 未初始化，忽略 answer')
+      return
+    }
     console.warn('PeerConnection 未初始化，忽略信令:', signal)
     return
   }
@@ -486,6 +523,8 @@ const handleIncomingSignal = (signal: WebRTCSignal) => {
     } else if (signal.type === 'answer' && signal.sdp) {
       pc.value.setRemoteDescription(new RTCSessionDescription(signal))
       callStatus.value = '通话中'
+    } else if (signal.type === 'offer' && signal.sdp) {
+      pc.value.setRemoteDescription(new RTCSessionDescription(signal))
     }
   } catch (err) {
     console.error('处理信令失败:', err)

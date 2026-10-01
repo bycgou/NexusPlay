@@ -1,4 +1,4 @@
-﻿<!-- src/views/chat/ChatView.vue -->
+<!-- src/views/chat/ChatView.vue -->
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, computed, provide } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -183,21 +183,20 @@ const handleSocketMessage = (event) => {
             currentConversation.value = targetConv
             messages.value = []
           } else {
-            // 如果会话不存在，可选：创建或忽略
             console.warn('收到 offer，但会话不存在:', data.conversationId)
           }
           isVideoCalling.value = true
 
-          // 延迟确保 modal 已挂载
-          setTimeout(() => {
+          // nextTick 后立即接听，避免 300ms 窗口内丢掉 ICE
+          nextTick(() => {
             videoCallModalRef.value?.startIncomingCall(signal)
-          }, 300)
+          })
+        } else {
+          videoCallModalRef.value?.handleIncomingSignal(signal)
         }
       } else {
-        // answer / candidate：直接转发
-        setTimeout(() => {
-          videoCallModalRef.value?.handleIncomingSignal(signal)
-        }, 50)
+        // answer / candidate：PC 未建好时 modal 会缓存
+        videoCallModalRef.value?.handleIncomingSignal(signal)
       }
       return
     }
