@@ -35,29 +35,30 @@ export default defineConfig(({ mode }) => ({
     },
     server: {
         host: '0.0.0.0',
-        port: 5173,
+        port: Number(process.env.FRONTEND_PORT) || 21060,
+        strictPort: true,
         open: true,
         proxy: {
             '/api': {
-                target: 'http://localhost:8081',
+                target: process.env.BACKEND_URL || 'http://127.0.0.1:21160',
                 changeOrigin: true,
                 rewrite: (path) => path.replace(/^\/api/, ''),
             },
             // WebSocket：直播弹幕/PK/连麦信令、私信。不代理的话，局域网访问者会连到
             // Vite 自己（返回 index.html），握手永远失败
             '/ws': {
-                target: 'ws://localhost:8081',
+                target: (process.env.BACKEND_URL || 'http://127.0.0.1:21160').replace(/^http/, 'ws'),
                 ws: true,
                 changeOrigin: true,
             },
             // 媒体资源：后端把 URL 存成相对路径（/images/...、/video-files/...），
             // 由这里转发到本机后端，局域网访问者才能加载封面与视频
             '/images': {
-                target: 'http://localhost:8081',
+                target: process.env.BACKEND_URL || 'http://127.0.0.1:21160',
                 changeOrigin: true,
             },
             '/video-files': {
-                target: 'http://localhost:8081',
+                target: process.env.BACKEND_URL || 'http://127.0.0.1:21160',
                 changeOrigin: true,
             },
             // 浏览器拉流走代理，避免 SRS CORS
@@ -66,14 +67,14 @@ export default defineConfig(({ mode }) => ({
             // target 用 127.0.0.1 而不是 localhost：SRS 未监听 IPv6 回环（[::1]:8080 不通），
             // 走 localhost 时 Node 会先试 IPv6 再回退，实测多花约 280ms
             '/srs-live': {
-                target: 'http://127.0.0.1:8080',
+                target: process.env.SRS_URL || 'http://127.0.0.1:8080',
                 changeOrigin: true,
                 rewrite: (path) => path.replace(/^\/srs-live/, '/live'),
             },
         },
     },
     optimizeDeps: {
-        include: ['emoji-mart-vue-fast'],
+        include: [],
     },
     build: {
         // 代码分割配置
